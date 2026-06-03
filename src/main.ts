@@ -1123,8 +1123,7 @@ export default class OD2Plugin extends Plugin {
     if (!dr) return false;
     try {
       const roller: any = await dr.getRoller(formula + this.renderFlag(), sourcePath || "");
-      // Precisa do widget clicável; sem ele, cai no motor próprio.
-      if (!roller || !roller.containerEl) return false;
+      if (!roller) return false;
       const interpEl = onResult ? out.createSpan({ cls: "od2-interp" }) : null;
       const aplicar = () => {
         const total = Number(roller?.result);
@@ -1138,12 +1137,13 @@ export default class OD2Plugin extends Plugin {
           interpEl.createSpan({ cls: "od2-calc", text: "· Dice Roller" });
         }
       };
-      // Atualiza a interpretação OD2 toda vez que o usuário rolar o dado (clique real = 3D).
+      // Atualiza a interpretação OD2 a cada rolagem (inclui o clique do usuário no dado = 3D).
       if (typeof roller.on === "function") roller.on("new-result", aplicar);
-      // Insere o dado clicável SEM rolar; o clique do usuário no dado anima em 3D.
-      out.insertBefore(roller.containerEl, interpEl);
-      if (interpEl) interpEl.createSpan({ cls: "od2-calc", text: "clique no dado para rolar 🎲" });
-      return true;
+      if (roller.containerEl) out.insertBefore(roller.containerEl, interpEl);
+      // Rola já para mostrar o resultado na hora; o dado continua clicável para animar em 3D.
+      if (typeof roller.roll === "function") await roller.roll();
+      aplicar();
+      return Number.isFinite(Number(roller?.result)) || !!roller.containerEl;
     } catch {
       return false;
     }
