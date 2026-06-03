@@ -1086,18 +1086,27 @@ export default class OD2Plugin extends Plugin {
   private async rolarDano(out: HTMLElement, label: string, dano: string, sourcePath: string) {
     out.removeClass("ok");
     out.removeClass("fail");
-    const dr = (this.app as any).plugins?.getPlugin?.("obsidian-dice-roller");
-    if (dr && typeof dr.getRoller === "function") {
+    // getRoller pode estar no próprio plugin ou em plugin.api (varia entre versões).
+    const p = (this.app as any).plugins?.getPlugin?.("obsidian-dice-roller");
+    const dr =
+      p && typeof p.getRoller === "function"
+        ? p
+        : p?.api && typeof p.api.getRoller === "function"
+          ? p.api
+          : null;
+    if (dr) {
       try {
         const roller: any = await dr.getRoller(String(dano), sourcePath || "");
-        await roller.roll();
-        const total = roller.result ?? roller.resultText ?? "?";
-        out.empty();
-        out.createEl("b", { text: label });
-        out.appendText(` — dano ${dano} = `);
-        out.createEl("b", { text: String(total) });
-        out.createSpan({ cls: "od2-calc", text: "  · Dice Roller" });
-        return;
+        if (roller && typeof roller.roll === "function") await roller.roll();
+        const total = roller?.result ?? roller?.resultText;
+        if (total != null && total !== "") {
+          out.empty();
+          out.createEl("b", { text: label });
+          out.appendText(` — dano ${dano} = `);
+          out.createEl("b", { text: String(total) });
+          out.createSpan({ cls: "od2-calc", text: "  · Dice Roller" });
+          return;
+        }
       } catch {
         /* cai no motor próprio abaixo */
       }
