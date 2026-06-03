@@ -65,6 +65,21 @@ Comando: **"Inserir ficha de personagem (OD2)"** insere um esqueleto pronto.
 Bloco para criaturas, com botões de ataque/dano e de rolar PV pelos Dados de Vida.
 Comando: **"Inserir statblock de monstro (OD2)"**.
 
+## Compêndio (gerador de referência)
+
+Comando **"Gerar compêndio OD2 (SRD)"** cria uma pasta de notas de referência
+interligadas a partir dos dados do SRD embutidos no plugin:
+
+- `Classes/` — uma nota por classe (progressão de BA/JP, magias por dia, poderes);
+- `Povos/` — uma nota por povo (deslocamento, infravisão, bônus, habilidades);
+- `Bestiário/` — uma nota por criatura, com bloco `od2-monstro` interativo;
+- uma nota-índice ligando tudo.
+
+A pasta de destino é configurável (padrão: `Compêndio OD2`). O comando é **idempotente**:
+ao regenerar, atualiza as notas marcadas com `od2_compendio: true` e **preserva**
+qualquer nota sua de mesmo nome. O bestiário começa com um conjunto inicial e cresce
+conforme novas entradas são adicionadas.
+
 ## Instalação
 
 ### Via BRAT (recomendado enquanto não está na loja)

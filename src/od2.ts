@@ -124,3 +124,24 @@ export interface PovoDef {
   habilidades?: Array<{ nome?: string; desc?: string }>;
   bonus?: Bonus;
 }
+
+// Monstro embutido para semear o bestiário do compêndio (mesma forma do bloco od2-monstro).
+export interface MonstroSeed {
+  nome: string;
+  tipo?: string;
+  tamanho?: string;
+  alinhamento?: string;
+  habitat?: string;
+  descricao?: string;
+  encontro?: string;
+  xp?: number;
+  tesouro?: string;
+  movimento?: string;
+  dv?: string | number;
+  pv?: number;
+  ca?: number;
+  jp?: number;
+  moral?: number;
+  ataques?: Array<{ nome: string; qtd?: number; bonus?: number; dano?: string }>;
+  habilidades?: Array<{ nome: string; desc?: string }>;
+}

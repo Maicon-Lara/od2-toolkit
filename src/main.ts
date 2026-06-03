@@ -7,6 +7,8 @@ import {
   PluginSettingTab,
   Setting,
   TFile,
+  TFolder,
+  normalizePath,
   parseYaml,
   stringifyYaml,
 } from "obsidian";
@@ -20,13 +22,15 @@ import {
   num,
   sinal,
 } from "./od2";
-import { BASE_CLASSES, BASE_POVOS } from "./basedata";
+import { BASE_CLASSES, BASE_MONSTROS, BASE_POVOS } from "./basedata";
+import { notaClasse, notaIndice, notaMonstro, notaPovo } from "./compendio";
 import { rolarAtaque, rollDie, rollExpr, testeRollUnder } from "./roller";
 
 interface OD2Settings {
   mostrarCalculo: boolean;
+  pastaCompendio: string;
 }
-const DEFAULT_SETTINGS: OD2Settings = { mostrarCalculo: true };
+const DEFAULT_SETTINGS: OD2Settings = { mostrarCalculo: true, pastaCompendio: "Compêndio OD2" };
 
 const norm = (x: unknown): string => String(x ?? "").trim().toLowerCase();
 const atLevel = (arr: number[] | undefined, nivel: number): number | undefined =>
@@ -233,6 +237,12 @@ export default class OD2Plugin extends Plugin {
       id: "inserir-monstro-od2",
       name: "Inserir statblock de monstro (OD2)",
       editorCallback: (editor) => editor.replaceSelection(SKELETON_MONSTRO),
+    });
+
+    this.addCommand({
+      id: "gerar-compendio-od2",
+      name: "Gerar compêndio OD2 (SRD)",
+      callback: () => this.gerarCompendio(),
     });
 
     this.addSettingTab(new OD2SettingTab(this.app, this));
@@ -928,6 +938,84 @@ export default class OD2Plugin extends Plugin {
     await this.app.vault.modify(file, lines.join("\n"));
   }
 
+  // Cria a pasta se ainda não existir (cria também os pais, na ordem).
+  private async ensureFolder(path: string) {
+    const norm = normalizePath(path);
+    if (this.app.vault.getAbstractFileByPath(norm) instanceof TFolder) return;
+    const partes = norm.split("/");
+    let acc = "";
+    for (const p of partes) {
+      acc = acc ? `${acc}/${p}` : p;
+      if (!(this.app.vault.getAbstractFileByPath(acc) instanceof TFolder)) {
+        try {
+          await this.app.vault.createFolder(acc);
+        } catch {
+          /* já existe (corrida) — ignora */
+        }
+      }
+    }
+  }
+
+  // Escreve a nota gerada. Só sobrescreve notas marcadas com `od2_compendio: true`;
+  // preserva notas do usuário com o mesmo nome.
+  private async writeNote(
+    path: string,
+    content: string,
+  ): Promise<"criado" | "atualizado" | "pulado"> {
+    const norm = normalizePath(path);
+    const existing = this.app.vault.getAbstractFileByPath(norm);
+    if (existing instanceof TFile) {
+      const fm = this.app.metadataCache.getFileCache(existing)?.frontmatter;
+      if (fm?.od2_compendio !== true) return "pulado";
+      await this.app.vault.modify(existing, content);
+      return "atualizado";
+    }
+    await this.app.vault.create(norm, content);
+    return "criado";
+  }
+
+  // Gera/atualiza o compêndio (classes, povos e bestiário) a partir dos dados do SRD.
+  private async gerarCompendio() {
+    const base = normalizePath((this.settings.pastaCompendio || "Compêndio OD2").trim());
+    const tituloIndice = base.split("/").pop() || "Compêndio OD2";
+    const tally = { criado: 0, atualizado: 0, pulado: 0 };
+    const conta = (r: "criado" | "atualizado" | "pulado") => tally[r]++;
+
+    try {
+      await this.ensureFolder(base);
+      await this.ensureFolder(`${base}/Classes`);
+      await this.ensureFolder(`${base}/Povos`);
+      await this.ensureFolder(`${base}/Bestiário`);
+
+      for (const c of BASE_CLASSES) {
+        conta(await this.writeNote(`${base}/Classes/${c.nome}.md`, notaClasse(c)));
+      }
+      for (const p of BASE_POVOS) {
+        conta(await this.writeNote(`${base}/Povos/${p.nome}.md`, notaPovo(p)));
+      }
+      for (const m of BASE_MONSTROS) {
+        const body = stringifyYaml(m);
+        conta(await this.writeNote(`${base}/Bestiário/${m.nome}.md`, notaMonstro(m.nome, body)));
+      }
+
+      const indice = notaIndice(
+        tituloIndice,
+        BASE_CLASSES.map((c) => c.nome),
+        BASE_POVOS.map((p) => p.nome),
+        BASE_MONSTROS.map((m) => m.nome),
+      );
+      conta(await this.writeNote(`${base}/${tituloIndice}.md`, indice));
+
+      new Notice(
+        `Compêndio OD2 em “${base}”: ${tally.criado} criadas, ${tally.atualizado} atualizadas` +
+          (tally.pulado ? `, ${tally.pulado} preservadas (suas)` : "") +
+          ".",
+      );
+    } catch (e) {
+      new Notice("OD2: erro ao gerar o compêndio — " + (e as Error).message);
+    }
+  }
+
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -954,6 +1042,19 @@ class OD2SettingTab extends PluginSettingTab {
           this.plugin.settings.mostrarCalculo = v;
           await this.plugin.saveSettings();
         }),
+      );
+
+    new Setting(containerEl)
+      .setName("Pasta do compêndio")
+      .setDesc('Onde o comando "Gerar compêndio OD2" cria as notas de referência.')
+      .addText((t) =>
+        t
+          .setPlaceholder("Compêndio OD2")
+          .setValue(this.plugin.settings.pastaCompendio)
+          .onChange(async (v) => {
+            this.plugin.settings.pastaCompendio = v || "Compêndio OD2";
+            await this.plugin.saveSettings();
+          }),
       );
 
     const credito = containerEl.createDiv({ cls: "od2-credito" });

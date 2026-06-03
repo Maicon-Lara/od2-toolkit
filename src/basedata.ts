@@ -1,4 +1,4 @@
-import { ClasseDef, PovoDef } from "./od2";
+import { ClasseDef, MonstroSeed, PovoDef } from "./od2";
 
 // Progressões base do OD2 (BA/JP por nível 1..15). Números do SRD gratuito.
 const guerreiro = { ba: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], jp: [5, 5, 6, 6, 8, 8, 10, 10, 11, 11, 13, 13, 14, 14, 16] };
@@ -169,6 +169,61 @@ export const BASE_POVOS: PovoDef[] = [
       { nome: "Avaliadores", desc: "avalia o valor de arte, gemas e joias (1-4 em 1d6)" },
       { nome: "Sagazes e Vigorosos", desc: "+1 em JPC ou JPS (à escolha)" },
       { nome: "Restrições", desc: "armas pequenas/médias (médias = 2 mãos)" },
+    ],
+  },
+];
+
+// Bestiário inicial (semente) do compêndio — monstros clássicos de baixo nível do OD2.
+// Conferir/expandir com o SRD. CA ascendente; DV em d8 (½ = 1d4).
+export const BASE_MONSTROS: MonstroSeed[] = [
+  {
+    nome: "Goblin", tipo: "Humanoide", tamanho: "Pequeno", alinhamento: "Caótico",
+    habitat: "Cavernas, ruínas e túneis",
+    descricao: "Pequeno humanoide covarde e cruel que ataca em bandos e arma emboscadas.",
+    encontro: "2d4 (6d10)", xp: 15, tesouro: "incomum", movimento: "9",
+    dv: 1, pv: 5, ca: 13, jp: 5, moral: 7,
+    ataques: [
+      { nome: "Cutelo", qtd: 1, bonus: 1, dano: "1d6" },
+      { nome: "Funda", qtd: 1, bonus: 1, dano: "1d4" },
+    ],
+    habilidades: [
+      { nome: "Visão no escuro", desc: "enxerga no escuro a até 18 metros" },
+      { nome: "Covardes", desc: "-1 de Moral quando lutam sob a luz do sol" },
+    ],
+  },
+  {
+    nome: "Kobold", tipo: "Humanoide", tamanho: "Pequeno", alinhamento: "Caótico",
+    habitat: "Túneis e minas abandonadas",
+    descricao: "Humanoide reptiliano pequeno e ardiloso, especialista em armadilhas e ataques em número.",
+    encontro: "4d4 (6d10)", xp: 10, tesouro: "incomum", movimento: "9",
+    dv: "½", pv: 3, ca: 12, jp: 5, moral: 6,
+    ataques: [{ nome: "Arma pequena", qtd: 1, bonus: 0, dano: "1d4" }],
+    habilidades: [
+      { nome: "Visão no escuro", desc: "enxerga no escuro a até 18 metros" },
+      { nome: "Armadilheiros", desc: "preparam armadilhas e emboscadas com vantagem em terreno conhecido" },
+    ],
+  },
+  {
+    nome: "Orc", tipo: "Humanoide", tamanho: "Médio", alinhamento: "Caótico",
+    habitat: "Fortes, cavernas e terras devastadas",
+    descricao: "Humanoide brutal e agressivo, organizado em tribos guerreiras.",
+    encontro: "2d4 (1d10 × 10)", xp: 20, tesouro: "comum", movimento: "9",
+    dv: 1, pv: 6, ca: 13, jp: 5, moral: 8,
+    ataques: [{ nome: "Arma marcial", qtd: 1, bonus: 1, dano: "1d8" }],
+    habilidades: [
+      { nome: "Visão no escuro", desc: "enxerga no escuro a até 18 metros" },
+      { nome: "Sensíveis à luz", desc: "sofrem penalidade quando lutam sob luz forte do sol" },
+    ],
+  },
+  {
+    nome: "Esqueleto", tipo: "Morto-vivo", tamanho: "Médio", alinhamento: "Caótico",
+    habitat: "Tumbas, ruínas e masmorras",
+    descricao: "Ossada reanimada por magia ou maldição; obedece sem hesitar a quem o ergueu.",
+    encontro: "3d4 (3d10)", xp: 15, tesouro: "nenhum", movimento: "9",
+    dv: 1, pv: 5, ca: 12, jp: 5, moral: 12,
+    ataques: [{ nome: "Arma ou garras", qtd: 1, bonus: 1, dano: "1d6" }],
+    habilidades: [
+      { nome: "Morto-vivo", desc: "imune a sono, encanto e medo; não faz Teste de Moral; afetado por Afastar Mortos-Vivos" },
     ],
   },
 ];
