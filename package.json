@@ -1,0 +1,22 @@
+{
+  "name": "od2-toolkit",
+  "version": "0.6.0",
+  "description": "Old Dragon 2 toolkit for Obsidian: interactive character sheets and rolls.",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "keywords": ["obsidian", "ttrpg", "old-dragon", "rpg"],
+  "author": "Maicon-Lara",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.20.0",
+    "obsidian": "latest",
+    "tslib": "^2.6.0",
+    "typescript": "^5.4.0"
+  }
+}
