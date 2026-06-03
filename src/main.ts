@@ -1111,6 +1111,65 @@ export default class OD2Plugin extends Plugin {
   }
 
   // Rola 1d20 pelo Dice Roller (se instalado) e aplica a interpretação OD2; senão, motor próprio.
+  // Cria um widget do Dice Roller, dispara a animação 3D (como o clique do usuário no dado)
+  // e, opcionalmente, mostra a interpretação OD2 ao lado. false = Dice Roller indisponível.
+  private async rolarComWidget(
+    out: HTMLElement,
+    formula: string,
+    sourcePath: string,
+    onResult?: (total: number) => { html: string; ok: boolean | null },
+  ): Promise<boolean> {
+    const dr = this.diceRollerApi();
+    if (!dr) return false;
+    try {
+      const roller: any = await dr.getRoller(formula + this.renderFlag(), sourcePath || "");
+      if (!roller) return false;
+      const interpEl = onResult ? out.createSpan({ cls: "od2-interp" }) : null;
+      let aplicado = false;
+      const aplicar = () => {
+        const total = Number(roller?.result);
+        if (!Number.isFinite(total)) return;
+        aplicado = true;
+        if (onResult && interpEl) {
+          const { html, ok } = onResult(total);
+          out.toggleClass("ok", ok === true);
+          out.toggleClass("fail", ok === false);
+          interpEl.empty();
+          setRich(interpEl, " " + html + " ");
+          interpEl.createSpan({ cls: "od2-calc", text: "· Dice Roller" });
+        }
+      };
+      if (typeof roller.on === "function") roller.on("new-result", aplicar);
+      if (roller.containerEl) {
+        out.insertBefore(roller.containerEl, interpEl);
+        // Dispara o 3D do jeito que o clique do usuário no dado faz (após o layout).
+        window.requestAnimationFrame(() => {
+          try {
+            roller.containerEl.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+          } catch {
+            /* ignora */
+          }
+        });
+        // Rede de segurança: se o clique não rolar, rola direto.
+        window.setTimeout(async () => {
+          if (aplicado) return;
+          try {
+            if (typeof roller.roll === "function") await roller.roll();
+          } catch {
+            /* ignora */
+          }
+          aplicar();
+        }, 400);
+        return true;
+      }
+      if (typeof roller.roll === "function") await roller.roll();
+      aplicar();
+      return Number.isFinite(Number(roller?.result));
+    } catch {
+      return false;
+    }
+  }
+
   private async rolarD20(
     out: HTMLElement,
     interpretar: (d20: number) => { html: string; ok: boolean | null },
@@ -1118,33 +1177,8 @@ export default class OD2Plugin extends Plugin {
     out.empty();
     out.removeClass("ok");
     out.removeClass("fail");
-    const dr = this.diceRollerApi();
-    if (dr) {
-      try {
-        const roller: any = await dr.getRoller("1d20" + this.renderFlag(), "");
-        const interpEl = out.createSpan({ cls: "od2-interp" });
-        const aplicar = () => {
-          const d20 = Number(roller?.result);
-          if (!Number.isFinite(d20)) return;
-          const { html, ok } = interpretar(d20);
-          out.toggleClass("ok", ok === true);
-          out.toggleClass("fail", ok === false);
-          interpEl.empty();
-          setRich(interpEl, html + " ");
-          interpEl.createSpan({ cls: "od2-calc", text: "· Dice Roller" });
-        };
-        if (roller?.containerEl) out.prepend(roller.containerEl);
-        if (typeof roller?.on === "function") roller.on("new-result", aplicar);
-        if (typeof roller?.roll === "function") await roller.roll();
-        if (Number.isFinite(Number(roller?.result))) {
-          aplicar();
-          return;
-        }
-        out.empty();
-      } catch {
-        out.empty();
-      }
-    }
+    if (await this.rolarComWidget(out, "1d20", "", interpretar)) return;
+    out.empty();
     const d20 = rollDie(20);
     const { html, ok } = interpretar(d20);
     out.toggleClass("ok", ok === true);
@@ -1153,26 +1187,12 @@ export default class OD2Plugin extends Plugin {
   }
 
   private async rolarDano(out: HTMLElement, label: string, dano: string, sourcePath: string) {
+    out.empty();
     out.removeClass("ok");
     out.removeClass("fail");
-    const dr = this.diceRollerApi();
-    if (dr) {
-      try {
-        const roller: any = await dr.getRoller(String(dano) + this.renderFlag(), sourcePath || "");
-        if (roller && typeof roller.roll === "function") await roller.roll();
-        const total = roller?.result ?? roller?.resultText;
-        if (total != null && total !== "") {
-          out.empty();
-          out.createEl("b", { text: label });
-          out.appendText(` — dano ${dano} = `);
-          out.createEl("b", { text: String(total) });
-          out.createSpan({ cls: "od2-calc", text: "  · Dice Roller" });
-          return;
-        }
-      } catch {
-        /* cai no motor próprio abaixo */
-      }
-    }
+    out.createSpan({ text: `${label} — dano: ` });
+    if (await this.rolarComWidget(out, String(dano), sourcePath)) return;
+    out.empty();
     const r = rollExpr(String(dano));
     setRich(
       out,
