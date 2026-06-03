@@ -33,6 +33,7 @@ import {
   notaArmas,
   notaClasse,
   notaEquipamento,
+  notaFormulasDiceRoller,
   notaIndice,
   notaItens,
   notaItensMagicos,
@@ -40,7 +41,7 @@ import {
   notaMonstro,
   notaPovo,
 } from "./compendio";
-import { rolarAtaque, rollDie, rollExpr, testeRollUnder } from "./roller";
+import { avaliarAtaque, avaliarTeste, rollDie, rollExpr } from "./roller";
 
 interface OD2Settings {
   mostrarCalculo: boolean;
@@ -384,15 +385,17 @@ export default class OD2Plugin extends Plugin {
       card.createDiv({ cls: "od2-attr-val", text: String(v) });
       card.createDiv({ cls: "od2-attr-mod", text: sinal(mod(v)) });
       const btn = card.createEl("button", { cls: "od2-roll", text: "teste" });
-      btn.onclick = () => {
-        const alvo = v + ajuste;
-        const r = testeRollUnder(alvo);
-        showResult(
-          `<b>${label}</b> — 1d20 = <b>${r.d20}</b> (≤ ${alvo})${ajusteTxt()} → ${r.sucesso ? "✅ sucesso" : "❌ falha"}` +
-            (r.critico ? ` <i>(${r.critico} crítico)</i>` : ""),
-          r.sucesso,
-        );
-      };
+      btn.onclick = () =>
+        this.rolarD20(out, (d20) => {
+          const alvo = v + ajuste;
+          const r = avaliarTeste(d20, alvo);
+          return {
+            html:
+              `<b>${label}</b> — 1d20 = <b>${r.d20}</b> (≤ ${alvo})${ajusteTxt()} → ${r.sucesso ? "✅ sucesso" : "❌ falha"}` +
+              (r.critico ? ` <i>(${r.critico} crítico)</i>` : ""),
+            ok: r.sucesso,
+          };
+        });
     }
 
     // --- Combate ---
@@ -422,20 +425,21 @@ export default class OD2Plugin extends Plugin {
     const atkRow = comb.createDiv({ cls: "od2-btn-row" });
     const mkAtk = (label: string, bonus: number) => {
       const b = atkRow.createEl("button", { cls: "od2-roll", text: `${label} (${sinal(bonus)})` });
-      b.onclick = () => {
-        const total = bonus + ajuste;
-        const r = rolarAtaque(total, null);
-        const crit =
-          r.critico === "acerto"
-            ? " — 🎯 <b>Acerto Crítico!</b> (dano dobrado)"
-            : r.critico === "erro"
-              ? " — 💥 <b>Erro Crítico!</b>"
-              : "";
-        showResult(
-          `<b>${label}</b> — 1d20 (${r.d20}) ${sinal(total)} = <b>${r.total}</b>${ajusteTxt()}  <i>vs CA do alvo</i>${crit}`,
-          r.critico === "acerto" ? true : r.critico === "erro" ? false : null,
-        );
-      };
+      b.onclick = () =>
+        this.rolarD20(out, (d20) => {
+          const total = bonus + ajuste;
+          const r = avaliarAtaque(d20, total, null);
+          const crit =
+            r.critico === "acerto"
+              ? " — 🎯 <b>Acerto Crítico!</b> (dano dobrado)"
+              : r.critico === "erro"
+                ? " — 💥 <b>Erro Crítico!</b>"
+                : "";
+          return {
+            html: `<b>${label}</b> — 1d20 (${r.d20}) ${sinal(total)} = <b>${r.total}</b>${ajusteTxt()}  <i>vs CA do alvo</i>${crit}`,
+            ok: r.critico === "acerto" ? true : r.critico === "erro" ? false : null,
+          };
+        });
     };
     mkAtk("Corpo a corpo", ac);
     mkAtk("À distância", ad);
@@ -487,20 +491,21 @@ export default class OD2Plugin extends Plugin {
         row.createSpan({ cls: "od2-atk-name", text: a.nome || "—" });
         const atkBonus = num(a.bonus);
         const ba2 = row.createEl("button", { cls: "od2-roll", text: `atacar (${sinal(atkBonus)})` });
-        ba2.onclick = () => {
-          const total = atkBonus + ajuste;
-          const r = rolarAtaque(total, null);
-          const crit =
-            r.critico === "acerto"
-              ? " — 🎯 <b>Acerto Crítico!</b>"
-              : r.critico === "erro"
-                ? " — 💥 <b>Erro Crítico!</b>"
-                : "";
-          showResult(
-            `<b>${a.nome}</b> — ataque: 1d20 (${r.d20}) ${sinal(total)} = <b>${r.total}</b>${ajusteTxt()}${crit}`,
-            r.critico === "acerto" ? true : r.critico === "erro" ? false : null,
-          );
-        };
+        ba2.onclick = () =>
+          this.rolarD20(out, (d20) => {
+            const total = atkBonus + ajuste;
+            const r = avaliarAtaque(d20, total, null);
+            const crit =
+              r.critico === "acerto"
+                ? " — 🎯 <b>Acerto Crítico!</b>"
+                : r.critico === "erro"
+                  ? " — 💥 <b>Erro Crítico!</b>"
+                  : "";
+            return {
+              html: `<b>${a.nome}</b> — ataque: 1d20 (${r.d20}) ${sinal(total)} = <b>${r.total}</b>${ajusteTxt()}${crit}`,
+              ok: r.critico === "acerto" ? true : r.critico === "erro" ? false : null,
+            };
+          });
         if (a.dano) {
           const bd = row.createEl("button", { cls: "od2-roll od2-dmg", text: `dano (${a.dano})` });
           bd.onclick = () => this.rolarDano(out, a.nome || "Ataque", String(a.dano), ctx.sourcePath);
@@ -544,14 +549,15 @@ export default class OD2Plugin extends Plugin {
       row.createSpan({ cls: "od2-jp-label", text: label });
       row.createSpan({ cls: "od2-jp-val", text: `role ≤ ${final}` });
       const b = row.createEl("button", { cls: "od2-roll", text: "rolar" });
-      b.onclick = () => {
-        const alvo = final + ajuste;
-        const r = testeRollUnder(alvo);
-        showResult(
-          `<b>${label}</b> — 1d20 = <b>${r.d20}</b> (≤ ${alvo})${ajusteTxt()} → ${r.sucesso ? "✅ sucesso" : "❌ falha"}`,
-          r.sucesso,
-        );
-      };
+      b.onclick = () =>
+        this.rolarD20(out, (d20) => {
+          const alvo = final + ajuste;
+          const r = avaliarTeste(d20, alvo);
+          return {
+            html: `<b>${label}</b> — 1d20 = <b>${r.d20}</b> (≤ ${alvo})${ajusteTxt()} → ${r.sucesso ? "✅ sucesso" : "❌ falha"}`,
+            ok: r.sucesso,
+          };
+        });
     }
 
     // --- Magias por dia (classes conjuradoras) ---
@@ -889,15 +895,16 @@ export default class OD2Plugin extends Plugin {
         row.createSpan({ cls: "od2-atk-name", text: label });
         const bonus = num(a.bonus);
         const ba = row.createEl("button", { cls: "od2-roll", text: `atacar (${sinal(bonus)})` });
-        ba.onclick = () => {
-          const r = rolarAtaque(bonus, null);
-          const crit =
-            r.critico === "acerto" ? " — 🎯 <b>Crítico!</b>" : r.critico === "erro" ? " — 💥 <b>Erro!</b>" : "";
-          showResult(
-            `<b>${a.nome ?? "ataque"}</b>: 1d20 (${r.d20}) ${sinal(bonus)} = <b>${r.total}</b>${crit}`,
-            r.critico === "acerto" ? true : r.critico === "erro" ? false : null,
-          );
-        };
+        ba.onclick = () =>
+          this.rolarD20(out, (d20) => {
+            const r = avaliarAtaque(d20, bonus, null);
+            const crit =
+              r.critico === "acerto" ? " — 🎯 <b>Crítico!</b>" : r.critico === "erro" ? " — 💥 <b>Erro!</b>" : "";
+            return {
+              html: `<b>${a.nome ?? "ataque"}</b>: 1d20 (${r.d20}) ${sinal(bonus)} = <b>${r.total}</b>${crit}`,
+              ok: r.critico === "acerto" ? true : r.critico === "erro" ? false : null,
+            };
+          });
         if (a.dano) {
           const bd = row.createEl("button", { cls: "od2-roll od2-dmg", text: `dano (${a.dano})` });
           bd.onclick = () => this.rolarDano(out, a.nome ?? "ataque", String(a.dano), "");
@@ -1025,6 +1032,7 @@ export default class OD2Plugin extends Plugin {
       conta(await this.writeNote(`${mag}/Magias Divinas.md`, notaMagias("Magias Divinas", MAGIAS_DIVINAS)));
 
       conta(await this.writeNote(`${base}/Itens Mágicos.md`, notaItensMagicos(ITENS_MAGICOS)));
+      conta(await this.writeNote(`${base}/Fórmulas Dice Roller.md`, notaFormulasDiceRoller()));
 
       for (const m of BESTIARIO) {
         const body = stringifyYaml(m);
@@ -1043,6 +1051,7 @@ export default class OD2Plugin extends Plugin {
         { titulo: "Itens Mágicos", nomes: ["Itens Mágicos"] },
         { titulo: "Bestiário", nomes: BESTIARIO.map((m) => safe(m.nome)) },
         { titulo: "Humanos e Semi-humanos", nomes: HUMANOIDES.map((m) => safe(m.nome)) },
+        { titulo: "Ferramentas", nomes: ["Fórmulas Dice Roller"] },
       ]);
       conta(await this.writeNote(`${base}/${tituloIndice}.md`, indice));
 
@@ -1083,17 +1092,60 @@ export default class OD2Plugin extends Plugin {
   }
 
   // Rola dano usando o Dice Roller (se instalado) ou o motor próprio como fallback.
+  // Resolve a API de rolagem do Dice Roller (getRoller fica no plugin ou em plugin.api).
+  private diceRollerApi(): any {
+    const p = (this.app as any).plugins?.getPlugin?.("obsidian-dice-roller");
+    if (p && typeof p.getRoller === "function") return p;
+    if (p?.api && typeof p.api.getRoller === "function") return p.api;
+    return null;
+  }
+
+  // Rola 1d20 pelo Dice Roller (se instalado) e aplica a interpretação OD2; senão, motor próprio.
+  private async rolarD20(
+    out: HTMLElement,
+    interpretar: (d20: number) => { html: string; ok: boolean | null },
+  ) {
+    out.empty();
+    out.removeClass("ok");
+    out.removeClass("fail");
+    const dr = this.diceRollerApi();
+    if (dr) {
+      try {
+        const roller: any = await dr.getRoller("1d20", "");
+        const interpEl = out.createSpan({ cls: "od2-interp" });
+        const aplicar = () => {
+          const d20 = Number(roller?.result);
+          if (!Number.isFinite(d20)) return;
+          const { html, ok } = interpretar(d20);
+          out.toggleClass("ok", ok === true);
+          out.toggleClass("fail", ok === false);
+          interpEl.empty();
+          setRich(interpEl, html + " ");
+          interpEl.createSpan({ cls: "od2-calc", text: "· Dice Roller" });
+        };
+        if (roller?.containerEl) out.prepend(roller.containerEl);
+        if (typeof roller?.on === "function") roller.on("new-result", aplicar);
+        if (typeof roller?.roll === "function") await roller.roll();
+        if (Number.isFinite(Number(roller?.result))) {
+          aplicar();
+          return;
+        }
+        out.empty();
+      } catch {
+        out.empty();
+      }
+    }
+    const d20 = rollDie(20);
+    const { html, ok } = interpretar(d20);
+    out.toggleClass("ok", ok === true);
+    out.toggleClass("fail", ok === false);
+    setRich(out, html);
+  }
+
   private async rolarDano(out: HTMLElement, label: string, dano: string, sourcePath: string) {
     out.removeClass("ok");
     out.removeClass("fail");
-    // getRoller pode estar no próprio plugin ou em plugin.api (varia entre versões).
-    const p = (this.app as any).plugins?.getPlugin?.("obsidian-dice-roller");
-    const dr =
-      p && typeof p.getRoller === "function"
-        ? p
-        : p?.api && typeof p.api.getRoller === "function"
-          ? p.api
-          : null;
+    const dr = this.diceRollerApi();
     if (dr) {
       try {
         const roller: any = await dr.getRoller(String(dano), sourcePath || "");

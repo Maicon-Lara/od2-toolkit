@@ -206,6 +206,42 @@ export function notaItensMagicos(itens: ItemMagico[]): string {
   return out.join("\n");
 }
 
+// --- Fórmulas OD2 para o Dice Roller (cola de referência) ---
+export function notaFormulasDiceRoller(): string {
+  const out: string[] = [frontmatter("ferramenta"), "# Fórmulas OD2 para o Dice Roller", ""];
+  out.push(
+    "> [!info] Requer o plugin **Dice Roller**. Cole as fórmulas em qualquer nota e clique para rolar.",
+    "",
+    "## Testes (roll-under)",
+    "",
+    "No OD2 o teste tem sucesso com **1d20 ≤ alvo**. A comparação do Dice Roller mostra **1** (sucesso) ou **0** (falha):",
+    "",
+    "- Teste de atributo (≤ 13): `dice: 1d20<=13`",
+    "- Jogada de Proteção (≤ JP final 15): `dice: 1d20<=15`",
+    "- Ajuste **Fácil** (+2): some ao alvo (`<=17`); **Difícil** (−2): subtraia (`<=13`).",
+    "",
+    "## Ataque (CA ascendente)",
+    "",
+    "Role **1d20 + bônus** e compare com a CA do alvo (acerta se ≥ CA):",
+    "",
+    "- `dice: 1d20+6`",
+    "",
+    "## Dano",
+    "",
+    "- Uma mão: `dice: 1d8+2`  ·  duas mãos: `dice: 2d6`  ·  crítico (dobrado): `dice: 2d8+4`",
+    "",
+    "## Outras",
+    "",
+    "- Iniciativa de grupo (1d6): `dice: 1d6`",
+    "- PV por Dados de Vida (ex.: 3 DV d8): `dice: 3d8`",
+    "- Rolar um atributo (3d6): `dice: 3d6`",
+    "",
+    "_Na ficha e nos statblocks do plugin, os botões já usam o Dice Roller automaticamente quando ele está instalado._",
+    FOOTER,
+  );
+  return out.join("\n");
+}
+
 export function notaIndice(titulo: string, secoes: Array<{ titulo: string; nomes: string[] }>): string {
   const out: string[] = [frontmatter("indice"), `# ${titulo}`, ""];
   out.push(

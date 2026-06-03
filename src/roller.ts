@@ -37,8 +37,8 @@ export interface TesteResult {
   critico: "sucesso" | "falha" | null;
 }
 
-export function testeRollUnder(alvo: number): TesteResult {
-  const d = rollDie(20);
+// Interpreta um d20 já rolado (permite usar o dado de outra fonte, ex.: Dice Roller).
+export function avaliarTeste(d: number, alvo: number): TesteResult {
   let sucesso: boolean;
   let critico: "sucesso" | "falha" | null = null;
   if (d === 1) {
@@ -53,6 +53,10 @@ export function testeRollUnder(alvo: number): TesteResult {
   return { d20: d, alvo, sucesso, critico };
 }
 
+export function testeRollUnder(alvo: number): TesteResult {
+  return avaliarTeste(rollDie(20), alvo);
+}
+
 // Ataque do OD2 (CA ascendente): 1d20 + bônus ≥ CA do alvo.
 export interface AtaqueResult {
   d20: number;
@@ -63,8 +67,8 @@ export interface AtaqueResult {
   critico: "acerto" | "erro" | null;
 }
 
-export function rolarAtaque(bonus: number, caAlvo: number | null): AtaqueResult {
-  const d = rollDie(20);
+// Interpreta um ataque a partir de um d20 já rolado.
+export function avaliarAtaque(d: number, bonus: number, caAlvo: number | null): AtaqueResult {
   const total = d + bonus;
   let critico: "acerto" | "erro" | null = null;
   if (d === 20) critico = "acerto";
@@ -73,4 +77,8 @@ export function rolarAtaque(bonus: number, caAlvo: number | null): AtaqueResult 
   if (critico === "acerto") acerta = true;
   if (critico === "erro") acerta = false;
   return { d20: d, bonus, total, caAlvo, acerta, critico };
+}
+
+export function rolarAtaque(bonus: number, caAlvo: number | null): AtaqueResult {
+  return avaliarAtaque(rollDie(20), bonus, caAlvo);
 }
