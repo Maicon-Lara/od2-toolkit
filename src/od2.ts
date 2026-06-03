@@ -125,6 +125,28 @@ export interface PovoDef {
   bonus?: Bonus;
 }
 
+// --- Equipamento (Cap. 5 do SRD) ---
+export interface ArmaDef {
+  nome: string;
+  dano: string; // "1d8" ou "por flecha"
+  categoria?: string; // "Média, Cortante"
+  alcance?: string; // "Arremesso 9m", "30m", "Haste 3m"
+  custo?: string; // "10 PO"
+  carga?: string; // número ou "#" (carga desprezível)
+}
+export interface ArmaduraDef {
+  nome: string;
+  ca: string; // bônus de CA, ex. "+4"
+  tipo?: string; // "Média, Metal"
+  custo?: string;
+  carga?: string;
+}
+export interface ItemDef {
+  nome: string;
+  peso?: string;
+  custo?: string;
+}
+
 // Monstro embutido para semear o bestiário do compêndio (mesma forma do bloco od2-monstro).
 export interface MonstroSeed {
   nome: string;

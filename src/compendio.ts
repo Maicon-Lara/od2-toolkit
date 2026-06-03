@@ -1,7 +1,7 @@
 // Geração de notas de referência (compêndio) a partir dos dados do SRD.
 // Funções puras: recebem dados, devolvem markdown. Sem dependência do Obsidian.
 
-import { Bonus, ClasseDef, PovoDef, sinal } from "./od2";
+import { ArmaDef, ArmaduraDef, Bonus, ClasseDef, ItemDef, PovoDef, sinal } from "./od2";
 
 const FOOTER =
   "\n---\n*Nota gerada pelo Old Dragon 2 Toolkit a partir do SRD. " +
@@ -118,12 +118,55 @@ export function notaMonstro(nome: string, yamlBody: string): string {
   ].join("\n");
 }
 
-export function notaIndice(
-  titulo: string,
-  classes: string[],
-  povos: string[],
-  monstros: string[],
-): string {
+// --- Equipamento ---
+function tabela(out: string[], cabec: string[], linhas: string[][]) {
+  out.push(`| ${cabec.join(" | ")} |`, `|${cabec.map(() => "---").join("|")}|`);
+  for (const l of linhas) out.push(`| ${l.join(" | ")} |`);
+  out.push("");
+}
+
+export function notaArmas(armas: ArmaDef[]): string {
+  const out: string[] = [frontmatter("equipamento"), "# Armas", ""];
+  tabela(
+    out,
+    ["Arma", "Dano", "Categoria", "Alcance", "Custo", "Carga"],
+    armas.map((a) => [a.nome, a.dano, a.categoria ?? "—", a.alcance ?? "—", a.custo ?? "—", a.carga ?? "—"]),
+  );
+  out.push("_“#” = carga desprezível. Munições (flechas/virotes) definem o dano do disparo._", FOOTER);
+  return out.join("\n");
+}
+
+export function notaArmaduras(armaduras: ArmaduraDef[]): string {
+  const out: string[] = [frontmatter("equipamento"), "# Armaduras", ""];
+  tabela(
+    out,
+    ["Armadura", "Bônus de CA", "Tipo", "Custo", "Carga"],
+    armaduras.map((a) => [a.nome, a.ca, a.tipo ?? "—", a.custo ?? "—", a.carga ?? "—"]),
+  );
+  out.push("_CA ascendente: some o bônus da armadura à CA base 10 (+ mod. DES + escudo)._", FOOTER);
+  return out.join("\n");
+}
+
+export function notaItens(itens: ItemDef[]): string {
+  const out: string[] = [frontmatter("equipamento"), "# Itens Gerais", ""];
+  tabela(
+    out,
+    ["Item", "Peso", "Custo"],
+    itens.map((i) => [i.nome, i.peso ?? "—", i.custo ?? "—"]),
+  );
+  out.push(FOOTER);
+  return out.join("\n");
+}
+
+export function notaEquipamento(sistemaMonetario: string[]): string {
+  const out: string[] = [frontmatter("equipamento"), "# Equipamento", ""];
+  out.push("> [!info] Sistema monetário", ...sistemaMonetario.map((l) => `> - ${l}`), "");
+  out.push("## Tabelas", "", "- [[Armas]]", "- [[Armaduras]]", "- [[Itens Gerais]]", "");
+  out.push(FOOTER);
+  return out.join("\n");
+}
+
+export function notaIndice(titulo: string, secoes: Array<{ titulo: string; nomes: string[] }>): string {
   const out: string[] = [frontmatter("indice"), `# ${titulo}`, ""];
   out.push(
     "> [!abstract] Compêndio do Old Dragon 2",
@@ -132,15 +175,9 @@ export function notaIndice(
     "> ao regenerar; notas suas com o mesmo nome são preservadas.",
     "",
   );
-  const secao = (titulo: string, nomes: string[]) => {
-    if (!nomes.length) return;
-    out.push(`## ${titulo}`, "", ...nomes.map((n) => `- [[${n}]]`), "");
-  };
-  secao("Classes", classes);
-  secao("Povos", povos);
-  secao("Bestiário", monstros);
-  if (monstros.length) {
-    out.push("_Bestiário inicial — expanda adicionando entradas em `BASE_MONSTROS` ou notas `od2-monstro`._", "");
+  for (const s of secoes) {
+    if (!s.nomes.length) continue;
+    out.push(`## ${s.titulo}`, "", ...s.nomes.map((n) => `- [[${n}]]`), "");
   }
   out.push(FOOTER);
   return out.join("\n");

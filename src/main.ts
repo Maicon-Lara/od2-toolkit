@@ -23,7 +23,17 @@ import {
   sinal,
 } from "./od2";
 import { BASE_CLASSES, BASE_MONSTROS, BASE_POVOS } from "./basedata";
-import { notaClasse, notaIndice, notaMonstro, notaPovo } from "./compendio";
+import { ARMADURAS, ARMAS, ITENS_GERAIS, SISTEMA_MONETARIO } from "./srd/equipamento";
+import {
+  notaArmaduras,
+  notaArmas,
+  notaClasse,
+  notaEquipamento,
+  notaIndice,
+  notaItens,
+  notaMonstro,
+  notaPovo,
+} from "./compendio";
 import { rolarAtaque, rollDie, rollExpr, testeRollUnder } from "./roller";
 
 interface OD2Settings {
@@ -985,6 +995,7 @@ export default class OD2Plugin extends Plugin {
       await this.ensureFolder(base);
       await this.ensureFolder(`${base}/Classes`);
       await this.ensureFolder(`${base}/Povos`);
+      await this.ensureFolder(`${base}/Equipamento`);
       await this.ensureFolder(`${base}/Bestiário`);
 
       for (const c of BASE_CLASSES) {
@@ -993,17 +1004,24 @@ export default class OD2Plugin extends Plugin {
       for (const p of BASE_POVOS) {
         conta(await this.writeNote(`${base}/Povos/${p.nome}.md`, notaPovo(p)));
       }
+
+      const eq = `${base}/Equipamento`;
+      conta(await this.writeNote(`${eq}/Equipamento.md`, notaEquipamento(SISTEMA_MONETARIO)));
+      conta(await this.writeNote(`${eq}/Armas.md`, notaArmas(ARMAS)));
+      conta(await this.writeNote(`${eq}/Armaduras.md`, notaArmaduras(ARMADURAS)));
+      conta(await this.writeNote(`${eq}/Itens Gerais.md`, notaItens(ITENS_GERAIS)));
+
       for (const m of BASE_MONSTROS) {
         const body = stringifyYaml(m);
         conta(await this.writeNote(`${base}/Bestiário/${m.nome}.md`, notaMonstro(m.nome, body)));
       }
 
-      const indice = notaIndice(
-        tituloIndice,
-        BASE_CLASSES.map((c) => c.nome),
-        BASE_POVOS.map((p) => p.nome),
-        BASE_MONSTROS.map((m) => m.nome),
-      );
+      const indice = notaIndice(tituloIndice, [
+        { titulo: "Classes", nomes: BASE_CLASSES.map((c) => c.nome) },
+        { titulo: "Povos", nomes: BASE_POVOS.map((p) => p.nome) },
+        { titulo: "Equipamento", nomes: ["Equipamento", "Armas", "Armaduras", "Itens Gerais"] },
+        { titulo: "Bestiário", nomes: BASE_MONSTROS.map((m) => m.nome) },
+      ]);
       conta(await this.writeNote(`${base}/${tituloIndice}.md`, indice));
 
       new Notice(
