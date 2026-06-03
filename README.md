@@ -108,7 +108,7 @@ GitHub e mantém a versão atualizada a cada nova release.
 
 1. Baixe `main.js`, `manifest.json` e `styles.css` da
    [última release](https://github.com/Maicon-Lara/od2-toolkit/releases/latest).
-2. Crie a pasta `<seu-vault>/.obsidian/plugins/od2-toolkit/` e copie os 3 arquivos
+2. Crie a pasta `<seu-vault>/.obsidian/plugins/old-dragon-toolkit/` e copie os 3 arquivos
    para dentro dela.
 3. Reabra o Obsidian (ou *Recarregar plugins*) e ative o **Old Dragon 2 Toolkit**
    em **Plugins da comunidade**.
@@ -127,7 +127,7 @@ npm run build   # build de produção (gera main.js)
 ```
 
 Para testar localmente, copie `main.js`, `manifest.json` e `styles.css` para
-`<vault>/.obsidian/plugins/od2-toolkit/`.
+`<vault>/.obsidian/plugins/old-dragon-toolkit/`.
 
 ### Publicar uma nova versão
 1. Atualize `version` em `manifest.json` e `package.json`, e adicione a entrada em `versions.json`.
