@@ -84,16 +84,39 @@ qualquer nota sua de mesmo nome.
 
 ## Instalação
 
-### Via BRAT (recomendado enquanto não está na loja)
-1. Instale o plugin **Obsidian42 - BRAT**.
-2. Em *BRAT → Add Beta Plugin*, informe `Maicon-Lara/od2-toolkit`.
-3. Ative o **Old Dragon 2 Toolkit** em *Plugins da comunidade*.
+> O plugin ainda **não está na loja oficial** do Obsidian, então use um dos
+> caminhos abaixo. Em ambos, é preciso ter os **Plugins da comunidade** habilitados
+> (Obsidian pode pedir para desativar o "Modo restrito"/Safe Mode na primeira vez).
+
+### Via BRAT — recomendado (atualiza sozinho)
+
+O [BRAT](https://github.com/TfTHacker/obsidian42-brat) instala plugins direto do
+GitHub e mantém a versão atualizada a cada nova release.
+
+1. Em **Configurações → Plugins da comunidade → Procurar**, instale **"BRAT"**
+   (Obsidian42 - BRAT) e ative-o.
+2. Abra a paleta de comandos (**Ctrl/Cmd + P**) e rode
+   **"BRAT: Add a beta plugin for testing"**.
+3. Informe o repositório:
+   ```
+   Maicon-Lara/od2-toolkit
+   ```
+4. Confirme — o BRAT baixa a última release e instala.
+5. Em **Plugins da comunidade**, ative o **Old Dragon 2 Toolkit**.
 
 ### Manual
+
 1. Baixe `main.js`, `manifest.json` e `styles.css` da
    [última release](https://github.com/Maicon-Lara/od2-toolkit/releases/latest).
-2. Copie para `<vault>/.obsidian/plugins/od2-toolkit/`.
-3. Ative o plugin em *Plugins da comunidade*.
+2. Crie a pasta `<seu-vault>/.obsidian/plugins/od2-toolkit/` e copie os 3 arquivos
+   para dentro dela.
+3. Reabra o Obsidian (ou *Recarregar plugins*) e ative o **Old Dragon 2 Toolkit**
+   em **Plugins da comunidade**.
+
+### Pela loja oficial (futuro)
+
+Quando aprovado, bastará **Configurações → Plugins da comunidade → Procurar →
+"Old Dragon 2"** e clicar em *Instalar*.
 
 ## Desenvolvimento
 
