@@ -46,8 +46,13 @@ import { avaliarAtaque, avaliarTeste, rollDie, rollExpr } from "./roller";
 interface OD2Settings {
   mostrarCalculo: boolean;
   pastaCompendio: string;
+  dados3d: boolean;
 }
-const DEFAULT_SETTINGS: OD2Settings = { mostrarCalculo: true, pastaCompendio: "Compêndio OD2" };
+const DEFAULT_SETTINGS: OD2Settings = {
+  mostrarCalculo: true,
+  pastaCompendio: "Compêndio OD2",
+  dados3d: true,
+};
 
 const norm = (x: unknown): string => String(x ?? "").trim().toLowerCase();
 const atLevel = (arr: number[] | undefined, nivel: number): number | undefined =>
@@ -1100,22 +1105,9 @@ export default class OD2Plugin extends Plugin {
     return null;
   }
 
-  // Dispara a rolagem com os dados 3D do Dice Roller (render()), com fallback para roll().
-  private async rolarComRender(roller: any) {
-    try {
-      if (typeof roller?.render === "function") {
-        await roller.render();
-        return;
-      }
-    } catch {
-      /* tenta o caminho abaixo */
-    }
-    try {
-      roller.shouldRender = true;
-    } catch {
-      /* ignora */
-    }
-    if (typeof roller?.roll === "function") await roller.roll();
+  // Sufixo de fórmula que força a animação 3D do Dice Roller (flag |render), conforme a config.
+  private renderFlag(): string {
+    return this.settings.dados3d ? "|render" : "";
   }
 
   // Rola 1d20 pelo Dice Roller (se instalado) e aplica a interpretação OD2; senão, motor próprio.
@@ -1129,7 +1121,7 @@ export default class OD2Plugin extends Plugin {
     const dr = this.diceRollerApi();
     if (dr) {
       try {
-        const roller: any = await dr.getRoller("1d20", "");
+        const roller: any = await dr.getRoller("1d20" + this.renderFlag(), "");
         const interpEl = out.createSpan({ cls: "od2-interp" });
         const aplicar = () => {
           const d20 = Number(roller?.result);
@@ -1143,7 +1135,7 @@ export default class OD2Plugin extends Plugin {
         };
         if (roller?.containerEl) out.prepend(roller.containerEl);
         if (typeof roller?.on === "function") roller.on("new-result", aplicar);
-        await this.rolarComRender(roller);
+        if (typeof roller?.roll === "function") await roller.roll();
         if (Number.isFinite(Number(roller?.result))) {
           aplicar();
           return;
@@ -1166,8 +1158,8 @@ export default class OD2Plugin extends Plugin {
     const dr = this.diceRollerApi();
     if (dr) {
       try {
-        const roller: any = await dr.getRoller(String(dano), sourcePath || "");
-        await this.rolarComRender(roller);
+        const roller: any = await dr.getRoller(String(dano) + this.renderFlag(), sourcePath || "");
+        if (roller && typeof roller.roll === "function") await roller.roll();
         const total = roller?.result ?? roller?.resultText;
         if (total != null && total !== "") {
           out.empty();
@@ -1228,6 +1220,16 @@ class OD2SettingTab extends PluginSettingTab {
             this.plugin.settings.pastaCompendio = v || "Compêndio OD2";
             await this.plugin.saveSettings();
           }),
+      );
+
+    new Setting(containerEl)
+      .setName("Animar dados em 3D")
+      .setDesc("Quando o Dice Roller está instalado, força a animação 3D dos dados (flag |render).")
+      .addToggle((t) =>
+        t.setValue(this.plugin.settings.dados3d).onChange(async (v) => {
+          this.plugin.settings.dados3d = v;
+          await this.plugin.saveSettings();
+        }),
       );
 
     const credito = containerEl.createDiv({ cls: "od2-credito" });
