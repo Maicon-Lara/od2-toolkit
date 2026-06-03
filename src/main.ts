@@ -1100,6 +1100,24 @@ export default class OD2Plugin extends Plugin {
     return null;
   }
 
+  // Dispara a rolagem com os dados 3D do Dice Roller (render()), com fallback para roll().
+  private async rolarComRender(roller: any) {
+    try {
+      if (typeof roller?.render === "function") {
+        await roller.render();
+        return;
+      }
+    } catch {
+      /* tenta o caminho abaixo */
+    }
+    try {
+      roller.shouldRender = true;
+    } catch {
+      /* ignora */
+    }
+    if (typeof roller?.roll === "function") await roller.roll();
+  }
+
   // Rola 1d20 pelo Dice Roller (se instalado) e aplica a interpretação OD2; senão, motor próprio.
   private async rolarD20(
     out: HTMLElement,
@@ -1125,7 +1143,7 @@ export default class OD2Plugin extends Plugin {
         };
         if (roller?.containerEl) out.prepend(roller.containerEl);
         if (typeof roller?.on === "function") roller.on("new-result", aplicar);
-        if (typeof roller?.roll === "function") await roller.roll();
+        await this.rolarComRender(roller);
         if (Number.isFinite(Number(roller?.result))) {
           aplicar();
           return;
@@ -1149,7 +1167,7 @@ export default class OD2Plugin extends Plugin {
     if (dr) {
       try {
         const roller: any = await dr.getRoller(String(dano), sourcePath || "");
-        if (roller && typeof roller.roll === "function") await roller.roll();
+        await this.rolarComRender(roller);
         const total = roller?.result ?? roller?.resultText;
         if (total != null && total !== "") {
           out.empty();
