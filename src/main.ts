@@ -22,7 +22,8 @@ import {
   num,
   sinal,
 } from "./od2";
-import { BASE_CLASSES, BASE_MONSTROS, BASE_POVOS } from "./basedata";
+import { BASE_CLASSES, BASE_POVOS } from "./basedata";
+import { BESTIARIO } from "./srd/bestiario";
 import { ARMADURAS, ARMAS, ITENS_GERAIS, SISTEMA_MONETARIO } from "./srd/equipamento";
 import { MAGIAS_ARCANAS, MAGIAS_DIVINAS, MAGIAS_EXCLUSIVAS } from "./srd/magias";
 import {
@@ -1018,7 +1019,7 @@ export default class OD2Plugin extends Plugin {
       conta(await this.writeNote(`${mag}/Magias Arcanas.md`, notaMagias("Magias Arcanas", MAGIAS_ARCANAS, MAGIAS_EXCLUSIVAS)));
       conta(await this.writeNote(`${mag}/Magias Divinas.md`, notaMagias("Magias Divinas", MAGIAS_DIVINAS)));
 
-      for (const m of BASE_MONSTROS) {
+      for (const m of BESTIARIO) {
         const body = stringifyYaml(m);
         conta(await this.writeNote(`${base}/Bestiário/${m.nome}.md`, notaMonstro(m.nome, body)));
       }
@@ -1028,7 +1029,7 @@ export default class OD2Plugin extends Plugin {
         { titulo: "Povos", nomes: BASE_POVOS.map((p) => p.nome) },
         { titulo: "Equipamento", nomes: ["Equipamento", "Armas", "Armaduras", "Itens Gerais"] },
         { titulo: "Magias", nomes: ["Magias Arcanas", "Magias Divinas"] },
-        { titulo: "Bestiário", nomes: BASE_MONSTROS.map((m) => m.nome) },
+        { titulo: "Bestiário", nomes: BESTIARIO.map((m) => m.nome) },
       ]);
       conta(await this.writeNote(`${base}/${tituloIndice}.md`, indice));
 

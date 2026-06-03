@@ -161,7 +161,7 @@ export interface MonstroSeed {
   movimento?: string;
   dv?: string | number;
   pv?: number;
-  ca?: number;
+  ca?: number | string;
   jp?: number;
   moral?: number;
   ataques?: Array<{ nome: string; qtd?: number; bonus?: number; dano?: string }>;
