@@ -685,14 +685,12 @@ export default class OD2Plugin extends Plugin {
         inp.addEventListener("change", () => this.saveTalentos(ctx, el));
         const btn = row.createEl("button", { cls: "od2-roll", text: "testar" });
         btn.onclick = () =>
-          this.rolarD20(out, (d20) => {
-            const alvo = (Number(inp.value) || 2) + ajuste;
-            const r = avaliarTeste(d20, alvo);
+          this.rolarTeste(out, "1d6", 6, (d6) => {
+            const alvo = Number(inp.value) || 2;
+            const sucesso = d6 <= alvo;
             return {
-              html:
-                `<b>${t}</b> — 1d20 = <b>${r.d20}</b> (≤ ${alvo})${ajusteTxt()} → ${r.sucesso ? "✅ sucesso" : "❌ falha"}` +
-                (r.critico ? ` <i>(${r.critico} crítico)</i>` : ""),
-              ok: r.sucesso,
+              html: `<b>${t}</b> — 1d6 = <b>${d6}</b> (≤ ${alvo}) → ${sucesso ? "✅ sucesso" : "❌ falha"}`,
+              ok: sucesso,
             };
           });
       }
@@ -1161,20 +1159,30 @@ export default class OD2Plugin extends Plugin {
     }
   }
 
-  private async rolarD20(
+  // Rola `formula` (1 dado) pelo Dice Roller, ou `rollDie(lados)` como fallback, e interpreta.
+  private async rolarTeste(
     out: HTMLElement,
-    interpretar: (d20: number) => { html: string; ok: boolean | null },
+    formula: string,
+    lados: number,
+    interpretar: (valor: number) => { html: string; ok: boolean | null },
   ) {
     out.empty();
     out.removeClass("ok");
     out.removeClass("fail");
-    if (await this.rolarComWidget(out, "1d20", "", interpretar)) return;
+    if (await this.rolarComWidget(out, formula, "", interpretar)) return;
     out.empty();
-    const d20 = rollDie(20);
-    const { html, ok } = interpretar(d20);
+    const v = rollDie(lados);
+    const { html, ok } = interpretar(v);
     out.toggleClass("ok", ok === true);
     out.toggleClass("fail", ok === false);
     setRich(out, html);
+  }
+
+  private async rolarD20(
+    out: HTMLElement,
+    interpretar: (d20: number) => { html: string; ok: boolean | null },
+  ) {
+    await this.rolarTeste(out, "1d20", 20, interpretar);
   }
 
   private async rolarDano(out: HTMLElement, label: string, dano: string, sourcePath: string) {
