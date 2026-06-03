@@ -112,6 +112,161 @@ export const BASE_CLASSES: ClasseDef[] = [
       },
     ],
   },
+
+  // --- Especializações (Cap. 3 do SRD) ---
+  // Herdam a progressão de BA/JP e o perfil de magia da classe-base e somam poderes próprios.
+  // Guerreiro
+  {
+    nome: "Bárbaro", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
+    poderes: [
+      { nivel: 1, nome: "Vigor Bárbaro", desc: "+2 adicional em todas as Jogadas de Proteção" },
+      { nivel: 3, nome: "Talentos Selvagens", desc: "escala e se camufla em ambientes naturais" },
+      { nivel: 6, nome: "Surpresa Selvagem", desc: "surpreende inimigos em ambientes naturais (1-4 em 1d6)" },
+      { nivel: 10, nome: "Força do Totem", desc: "atinge criaturas que só são feridas por arma mágica +1 ou melhor" },
+    ],
+  },
+  {
+    nome: "Paladino", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
+    poderes: [
+      { nivel: 1, nome: "Imunidade a Doenças", desc: "imune a doenças mundanas e mágicas" },
+      { nivel: 3, nome: "Cura pelas Mãos", desc: "cura 1 PV por nível, 1×/dia" },
+      { nivel: 6, nome: "Aura de Proteção", desc: "proteção contra criaturas caóticas" },
+      { nivel: 10, nome: "Espada Sagrada", desc: "empunha espada mágica com +5 contra o caos" },
+    ],
+  },
+  {
+    nome: "Anão Aventureiro", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
+    poderes: [
+      { nivel: 1, nome: "Arma Racial", desc: "+2 de dano com machado ou martelo" },
+      { nivel: 3, nome: "Duro na Queda", desc: "passa a usar d12 de Dado de Vida (pode optar pelo valor médio, 6)" },
+      { nivel: 6, nome: "Bastião Racial", desc: "ataques de Orcs, Ogros e Hobgoblins contra ele são Difíceis" },
+      { nivel: 10, nome: "Ataque Extra", desc: "segundo ataque por rodada com a arma racial" },
+    ],
+  },
+  {
+    nome: "Arqueiro", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
+    poderes: [
+      { nivel: 1, nome: "Tiros em Curva", desc: "tiros contra cobertura, à distância ou em combate não são Difíceis" },
+      { nivel: 3, nome: "Puxada Aprimorada", desc: "soma o modificador de Força ao dano com arcos" },
+      { nivel: 6, nome: "Truques com Flechas", desc: "realiza efeitos especiais com disparos (desarmar, prender etc.)" },
+      { nivel: 10, nome: "Tiro Rápido", desc: "segundo disparo por ação de combate" },
+    ],
+  },
+  // Clérigo
+  {
+    nome: "Druida", base: "Clérigo", dado_vida: 8, ba: clerigo.ba, jp: clerigo.jp, magias: clerigoMagias,
+    poderes: [
+      { nivel: 1, nome: "Herbalismo", desc: "identifica plantas, animais e água pura" },
+      { nivel: 3, nome: "Previdência", desc: "acampamentos nos ermos são sempre seguros" },
+      { nivel: 6, nome: "Transformação", desc: "assume forma animal de até 6 DV, 3×/dia" },
+      { nivel: 10, nome: "Transformação Melhorada", desc: "forma animal de até 10 DV, 3×/dia" },
+    ],
+  },
+  {
+    nome: "Acadêmico", base: "Clérigo", dado_vida: 8, ba: clerigo.ba, jp: clerigo.jp, magias: clerigoMagias,
+    poderes: [
+      { nivel: 1, nome: "Conhecimento Acadêmico", desc: "identifica monstros e fraquezas (1-2 em 1d6)" },
+      { nivel: 3, nome: "Decifrar Linguagens", desc: "decodifica textos e idiomas (1-3 em 1d6)" },
+      { nivel: 6, nome: "Lendas e Tradições", desc: "conhece eventos históricos e perigos locais (1-4 em 1d6)" },
+      { nivel: 10, nome: "Identificar Itens", desc: "reconhece o propósito geral de itens mágicos (1-2 em 1d6)" },
+    ],
+  },
+  {
+    nome: "Xamã", base: "Clérigo", dado_vida: 8, ba: clerigo.ba, jp: clerigo.jp, magias: clerigoMagias,
+    poderes: [
+      { nivel: 1, nome: "Animal Sagrado", desc: "o símbolo divino concede ataques Fáceis aos aliados" },
+      { nivel: 3, nome: "Cura Totêmica", desc: "troca magia memorizada por Curar Ferimentos de 1º círculo (1d8)" },
+      { nivel: 6, nome: "Fúria", desc: "leva um aliado à fúria (dado superior, ataques Muito Fáceis)" },
+      { nivel: 10, nome: "Fúria da Natureza", desc: "conjura Controlar o Clima (magia de 7º círculo)" },
+    ],
+  },
+  {
+    nome: "Proscrito", base: "Clérigo", dado_vida: 8, ba: clerigo.ba, jp: clerigo.jp,
+    poderes: [
+      { nivel: 1, nome: "Cura Natural", desc: "aumenta a cura natural (2 PV, ou 1d4+1 em repouso)" },
+      { nivel: 3, nome: "Treinamento em Combate", desc: "+1 em BA; usa qualquer arma e armadura" },
+      { nivel: 6, nome: "Afetar Mortos-Vivos", desc: "força Teste de Moral em mortos-vivos, 1×/dia" },
+      { nivel: 10, nome: "Misticismo", desc: "passa a conjurar magias divinas de 1º círculo normalmente" },
+    ],
+  },
+  // Ladrão
+  {
+    nome: "Ranger", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
+    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    poderes: [
+      { nivel: 1, nome: "Inimigo Mortal", desc: "ataques contra Orcs, Goblins, Homens-Lagarto, Trolls ou Gigantes são Fáceis" },
+      { nivel: 3, nome: "Combativo", desc: "usa armas grandes e escudos sem penalidade" },
+      { nivel: 6, nome: "Previdência", desc: "raramente surpreendido nos ermos (1 em 1d6); acampamentos seguros" },
+      { nivel: 10, nome: "Companheiro Animal", desc: "ganha uma criatura dos ermos como aliada" },
+    ],
+  },
+  {
+    nome: "Bardo", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
+    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    poderes: [
+      { nivel: 1, nome: "Influenciar", desc: "modifica reações de NPCs com música/oratória (±1 no teste)" },
+      { nivel: 3, nome: "Inspirar", desc: "aliados inspirados fazem testes como um grau mais fácil" },
+      { nivel: 6, nome: "Fascinar", desc: "concentra audiência não-hostil (até 2 DV por 3 níveis)" },
+      { nivel: 10, nome: "Usar Pergaminhos", desc: "conjura pergaminhos arcanos como Mago de metade dos níveis" },
+    ],
+  },
+  {
+    nome: "Assassino", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
+    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    poderes: [
+      { nivel: 1, nome: "Ataque Assassino", desc: "ataque furtivo causa dano ×2" },
+      { nivel: 3, nome: "Espreitar", desc: "observar 1 rodada torna o ataque Fácil; 4 rodadas, Muito Fácil" },
+      { nivel: 6, nome: "Assassinato", desc: "golpe potencialmente fatal via furtivo (1-2 em 1d6)" },
+      { nivel: 10, nome: "Ataque Mortal", desc: "ataque assassino causa dano ×3" },
+    ],
+  },
+  {
+    nome: "Halfling Aventureiro", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
+    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    poderes: [
+      { nivel: 1, nome: "Arma Racial", desc: "+2 de dano com uma arma de arremesso à escolha" },
+      { nivel: 3, nome: "Valente", desc: "imune a medo/terror; testes contra intimidação são Fáceis" },
+      { nivel: 6, nome: "No Alvo", desc: "ataques à distância com a arma racial são Muito Fáceis" },
+      { nivel: 10, nome: "Arremesso Extra", desc: "segundo arremesso por ataque com a arma racial" },
+    ],
+  },
+  // Mago
+  {
+    nome: "Ilusionista", base: "Mago", dado_vida: 4, ba: mago.ba, jp: mago.jp, magias: magoMagias,
+    poderes: [
+      { nivel: 1, nome: "Magias Exclusivas", desc: "acesso a Ilusão e Som Ilusório (1×/dia, sem memorizar)" },
+      { nivel: 3, nome: "Ilusão Melhorada", desc: "magia exclusiva adicional" },
+      { nivel: 6, nome: "Miragem", desc: "magia exclusiva adicional" },
+      { nivel: 10, nome: "Ilusão Permanente", desc: "magia exclusiva adicional" },
+    ],
+  },
+  {
+    nome: "Necromante", base: "Mago", dado_vida: 4, ba: mago.ba, jp: mago.jp, magias: magoMagias,
+    poderes: [
+      { nivel: 1, nome: "Magias Exclusivas", desc: "acesso a Toque Sombrio e Aterrorizar (1×/dia, sem memorizar)" },
+      { nivel: 3, nome: "Criar Mortos-Vivos", desc: "magia exclusiva adicional" },
+      { nivel: 6, nome: "Drenar Vida", desc: "magia exclusiva adicional" },
+      { nivel: 10, nome: "Magia da Morte", desc: "magia exclusiva adicional" },
+    ],
+  },
+  {
+    nome: "Bruxo", base: "Mago", dado_vida: 4, ba: mago.ba, jp: mago.jp,
+    poderes: [
+      { nivel: 1, nome: "Iniciado", desc: "conjura magias via rituais (1 rodada); usa armas médias e armaduras leves" },
+      { nivel: 3, nome: "Médium", desc: "acesso a magias de 2º círculo; usa armas grandes" },
+      { nivel: 6, nome: "Conjurador", desc: "acesso a magias de 3º círculo; usa armaduras médias" },
+      { nivel: 10, nome: "Entidade", desc: "acesso a magias de 4º a 6º círculo; usa todas as armas e armaduras" },
+    ],
+  },
+  {
+    nome: "Elfo Aventureiro", base: "Mago", dado_vida: 4, ba: mago.ba, jp: mago.jp, magias: magoMagias,
+    poderes: [
+      { nivel: 1, nome: "Treinamento Racial", desc: "+2 de dano com a arma racial (cimitarra ou arco)" },
+      { nivel: 3, nome: "Brilho Mágico", desc: "conjura 1 magia de 1º círculo por dia" },
+      { nivel: 6, nome: "Esplendor Arcano", desc: "conjura magias como Mago 5 níveis abaixo" },
+      { nivel: 10, nome: "Ataque Extra", desc: "segundo ataque por rodada com a arma racial" },
+    ],
+  },
 ];
 
 // Raças-base do Old Dragon 2 (embutidas).
