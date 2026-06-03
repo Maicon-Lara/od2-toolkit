@@ -118,6 +118,7 @@ export interface ClasseDef {
 }
 export interface PovoDef {
   nome: string;
+  descricao?: string;
   deslocamento?: number;
   infravisao?: string;
   alinhamento?: string;

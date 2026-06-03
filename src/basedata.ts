@@ -273,6 +273,7 @@ export const BASE_CLASSES: ClasseDef[] = [
 export const BASE_POVOS: PovoDef[] = [
   {
     nome: "Humano", deslocamento: 9, infravisao: "não possui", alinhamento: "qualquer",
+    descricao: "Seres versáteis e adaptáveis, aprendem rápido e prosperam em qualquer ambiente. Sua diversidade permite ajustar-se a praticamente qualquer situação.",
     habilidades: [
       { nome: "Aprendizado", desc: "+10% em todo XP ganho" },
       { nome: "Adaptabilidade", desc: "+1 em uma JP à escolha" },
@@ -280,6 +281,7 @@ export const BASE_POVOS: PovoDef[] = [
   },
   {
     nome: "Elfo", deslocamento: 9, infravisao: "18m", alinhamento: "tende a Neutro",
+    descricao: "Graciosos e conectados à natureza, têm percepção aguçada e movimentos precisos. Sua tradição com o arco e a resistência a certos efeitos mágicos os tornam seres especiais e longevos.",
     bonus: { jpd: 1 },
     habilidades: [
       { nome: "Percepção Natural", desc: "detecta portas secretas a 6m (1 em 1d6; 1-2 procurando)" },
@@ -290,6 +292,7 @@ export const BASE_POVOS: PovoDef[] = [
   },
   {
     nome: "Anão", deslocamento: 6, infravisao: "18m", alinhamento: "tende a Ordeiro",
+    descricao: "Resistentes e experientes em ambientes subterrâneos, são mineradores natos que detectam anomalias na pedra. Seu vigor e a inimizade natural com certos povos os fazem guerreiros formidáveis e desconfiados.",
     bonus: { jpc: 1 },
     habilidades: [
       { nome: "Mineradores", desc: "detecta anomalias em pedra/armadilhas (1 em 1d6; 1-2 procurando)" },
@@ -300,6 +303,7 @@ export const BASE_POVOS: PovoDef[] = [
   },
   {
     nome: "Halfling", deslocamento: 6, infravisao: "não possui", alinhamento: "tende a Neutro",
+    descricao: "Pequenos, ágeis e surpreendentemente destemidos, compensam a baixa estatura com furtividade e pontaria em arremessos. Cautelosos e resistentes mentalmente, são sobreviventes notáveis.",
     bonus: { jps: 1 },
     habilidades: [
       { nome: "Furtivos", desc: "esconde-se (1-2 em 1d6); Ladrões somam +1 em Furtividade" },
@@ -311,6 +315,7 @@ export const BASE_POVOS: PovoDef[] = [
   },
   {
     nome: "Meio-Elfo", deslocamento: 9, infravisao: "9m", alinhamento: "tende a Caótico",
+    descricao: "Misturam traços de humanos e elfos: herdam o aprendizado acelerado e a graciosidade e resistência élficas. Sua natureza plural confere versatilidade e imunidades especiais.",
     habilidades: [
       { nome: "Aprendizado", desc: "+5% em todo XP ganho" },
       { nome: "Graciosos e Vigorosos", desc: "+1 em JPC ou JPD (à escolha)" },
@@ -320,6 +325,7 @@ export const BASE_POVOS: PovoDef[] = [
   },
   {
     nome: "Gnomo", deslocamento: 6, infravisao: "18m", alinhamento: "tende a Neutro",
+    descricao: "Pequenos mas astutos, são avaliadores precisos de objetos valiosos e desconfiados por natureza. Sagazes, vigorosos e habilidosos na mineração, são artesãos e estrategistas respeitáveis.",
     habilidades: [
       { nome: "Avaliadores", desc: "avalia o valor de arte, gemas e joias (1-4 em 1d6)" },
       { nome: "Sagazes e Vigorosos", desc: "+1 em JPC ou JPS (à escolha)" },

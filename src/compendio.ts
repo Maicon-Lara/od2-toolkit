@@ -2,6 +2,7 @@
 // Funções puras: recebem dados, devolvem markdown. Sem dependência do Obsidian.
 
 import { ArmaDef, ArmaduraDef, Bonus, ClasseDef, ItemDef, PovoDef, sinal } from "./od2";
+import { ItemMagico } from "./srd/itens-magicos";
 
 const FOOTER =
   "\n---\n*Nota gerada pelo Old Dragon 2 Toolkit a partir do SRD. " +
@@ -83,6 +84,7 @@ export function notaClasse(c: ClasseDef): string {
 
 export function notaPovo(p: PovoDef): string {
   const out: string[] = [frontmatter("povo"), `# ${p.nome}`, ""];
+  if (p.descricao) out.push(`> ${p.descricao}`, "");
 
   const info: string[] = [];
   if (p.deslocamento != null) info.push(`**Deslocamento:** ${p.deslocamento} m`);
@@ -185,6 +187,21 @@ export function notaMagias(
     out.push("");
   }
   out.push("_Apenas os nomes por círculo; descrições completas são expansão futura._", FOOTER);
+  return out.join("\n");
+}
+
+// --- Itens mágicos ---
+export function notaItensMagicos(itens: ItemMagico[]): string {
+  const out: string[] = [frontmatter("item-magico"), "# Itens Mágicos", ""];
+  const categorias = [...new Set(itens.map((i) => i.categoria))];
+  for (const cat of categorias) {
+    out.push(`## ${cat}`, "");
+    for (const i of itens.filter((x) => x.categoria === cat)) {
+      out.push(`- **${i.nome}** — ${i.efeito}`);
+    }
+    out.push("");
+  }
+  out.push(FOOTER);
   return out.join("\n");
 }
 

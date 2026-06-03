@@ -1,7 +1,7 @@
 {
   "id": "od2-toolkit",
   "name": "Old Dragon 2 Toolkit",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "minAppVersion": "1.5.0",
   "description": "Fichas de personagem interativas e rolagens para o sistema Old Dragon 2 (modificadores, CA ascendente, testes roll-under e Jogadas de Proteção).",
   "author": "Maicon-Lara",
