@@ -995,6 +995,8 @@ export default class OD2Plugin extends Plugin {
     const tituloIndice = base.split("/").pop() || "Compêndio OD2";
     const tally = { criado: 0, atualizado: 0, pulado: 0 };
     const conta = (r: "criado" | "atualizado" | "pulado") => tally[r]++;
+    // Nome de arquivo seguro (sem caracteres inválidos de caminho, ex.: "Jumento/Mula").
+    const safe = (n: string) => n.replace(/[\\/:*?"<>|]/g, "-").trim();
 
     try {
       await this.ensureFolder(base);
@@ -1005,10 +1007,10 @@ export default class OD2Plugin extends Plugin {
       await this.ensureFolder(`${base}/Bestiário`);
 
       for (const c of BASE_CLASSES) {
-        conta(await this.writeNote(`${base}/Classes/${c.nome}.md`, notaClasse(c)));
+        conta(await this.writeNote(`${base}/Classes/${safe(c.nome)}.md`, notaClasse(c)));
       }
       for (const p of BASE_POVOS) {
-        conta(await this.writeNote(`${base}/Povos/${p.nome}.md`, notaPovo(p)));
+        conta(await this.writeNote(`${base}/Povos/${safe(p.nome)}.md`, notaPovo(p)));
       }
 
       const eq = `${base}/Equipamento`;
@@ -1025,16 +1027,16 @@ export default class OD2Plugin extends Plugin {
 
       for (const m of BESTIARIO) {
         const body = stringifyYaml(m);
-        conta(await this.writeNote(`${base}/Bestiário/${m.nome}.md`, notaMonstro(m.nome, body)));
+        conta(await this.writeNote(`${base}/Bestiário/${safe(m.nome)}.md`, notaMonstro(m.nome, body)));
       }
 
       const indice = notaIndice(tituloIndice, [
-        { titulo: "Classes", nomes: BASE_CLASSES.map((c) => c.nome) },
-        { titulo: "Povos", nomes: BASE_POVOS.map((p) => p.nome) },
+        { titulo: "Classes", nomes: BASE_CLASSES.map((c) => safe(c.nome)) },
+        { titulo: "Povos", nomes: BASE_POVOS.map((p) => safe(p.nome)) },
         { titulo: "Equipamento", nomes: ["Equipamento", "Armas", "Armaduras", "Itens Gerais"] },
         { titulo: "Magias", nomes: ["Magias Arcanas", "Magias Divinas"] },
         { titulo: "Itens Mágicos", nomes: ["Itens Mágicos"] },
-        { titulo: "Bestiário", nomes: BESTIARIO.map((m) => m.nome) },
+        { titulo: "Bestiário", nomes: BESTIARIO.map((m) => safe(m.nome)) },
       ]);
       conta(await this.writeNote(`${base}/${tituloIndice}.md`, indice));
 
