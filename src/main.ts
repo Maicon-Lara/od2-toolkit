@@ -345,12 +345,7 @@ export default class OD2Plugin extends Plugin {
     if (d.jogador) head.createDiv({ cls: "od2-sub", text: `Jogador: ${d.jogador}` });
 
     const out = root.createDiv({ cls: "od2-out", text: "Clique em um botão para rolar." });
-    const showResult = (html: string, ok?: boolean | null) => {
-      out.empty();
-      out.toggleClass("ok", ok === true);
-      out.toggleClass("fail", ok === false);
-      setRich(out, html);
-    };
+    const showResult = (html: string, _ok?: boolean | null) => this.notificar(html);
 
     // Seletor de ajuste (OD2): Fácil +2, Difícil −2, etc. Aplica à próxima rolagem.
     let ajuste = 0;
@@ -865,12 +860,7 @@ export default class OD2Plugin extends Plugin {
     if (m.descricao) root.createEl("p", { cls: "od2-mob-desc", text: String(m.descricao) });
 
     const out = root.createDiv({ cls: "od2-out", text: "Clique para rolar." });
-    const showResult = (html: string, ok?: boolean | null) => {
-      out.empty();
-      out.toggleClass("ok", ok === true);
-      out.toggleClass("fail", ok === false);
-      setRich(out, html);
-    };
+    const showResult = (html: string, _ok?: boolean | null) => this.notificar(html);
 
     const stats = root.createDiv({ cls: "od2-stats" });
     const stat = (label: string, value: string) => {
@@ -1120,46 +1110,47 @@ export default class OD2Plugin extends Plugin {
     return this.settings.dados3d ? "|render" : "";
   }
 
-  // Rola 1d20 pelo Dice Roller (se instalado) e aplica a interpretação OD2; senão, motor próprio.
-  // Cria um widget do Dice Roller, dispara a animação 3D (como o clique do usuário no dado)
-  // e, opcionalmente, mostra a interpretação OD2 ao lado. false = Dice Roller indisponível.
+  // Mostra o resultado no popup lateral do Obsidian (Notice), sem as tags <b>/<i>.
+  private notificar(html: string) {
+    new Notice(html.replace(/<[^>]+>/g, ""), 8000);
+  }
+
+  // Insere o dado clicável do Dice Roller na ficha (anima 3D no clique do usuário) e
+  // mostra o resultado/interpretação no popup lateral (Notice). false = Dice Roller indisponível.
   private async rolarComWidget(
     out: HTMLElement,
     formula: string,
     sourcePath: string,
-    onResult?: (total: number) => { html: string; ok: boolean | null },
+    onResult: (total: number) => { html: string; ok: boolean | null },
   ): Promise<boolean> {
     const dr = this.diceRollerApi();
     if (!dr) return false;
     try {
       const roller: any = await dr.getRoller(formula + this.renderFlag(), sourcePath || "");
       if (!roller) return false;
-      const interpEl = onResult ? out.createSpan({ cls: "od2-interp" }) : null;
+      let notificado = false;
       const aplicar = () => {
         const total = Number(roller?.result);
         if (!Number.isFinite(total)) return;
-        if (onResult && interpEl) {
-          const { html, ok } = onResult(total);
-          out.toggleClass("ok", ok === true);
-          out.toggleClass("fail", ok === false);
-          interpEl.empty();
-          setRich(interpEl, " " + html + " ");
-          interpEl.createSpan({ cls: "od2-calc", text: "· Dice Roller" });
-        }
+        notificado = true;
+        this.notificar(onResult(total).html);
       };
-      // Atualiza a interpretação OD2 a cada rolagem (inclui o clique do usuário no dado = 3D).
+      // Notifica a cada rolagem, incluindo o clique do usuário no dado (animação 3D).
       if (typeof roller.on === "function") roller.on("new-result", aplicar);
-      if (roller.containerEl) out.insertBefore(roller.containerEl, interpEl);
-      // Rola já para mostrar o resultado na hora; o dado continua clicável para animar em 3D.
+      if (roller.containerEl) out.appendChild(roller.containerEl);
       if (typeof roller.roll === "function") await roller.roll();
-      aplicar();
-      return Number.isFinite(Number(roller?.result)) || !!roller.containerEl;
+      // Garante o popup inicial caso o evento new-result não dispare.
+      window.setTimeout(() => {
+        if (!notificado) aplicar();
+      }, 0);
+      return true;
     } catch {
       return false;
     }
   }
 
-  // Rola `formula` (1 dado) pelo Dice Roller, ou `rollDie(lados)` como fallback, e interpreta.
+  // Rola `formula` (1 dado) pelo Dice Roller, ou `rollDie(lados)` como fallback;
+  // o resultado/interpretação vai para o popup lateral (Notice).
   private async rolarTeste(
     out: HTMLElement,
     formula: string,
@@ -1167,15 +1158,8 @@ export default class OD2Plugin extends Plugin {
     interpretar: (valor: number) => { html: string; ok: boolean | null },
   ) {
     out.empty();
-    out.removeClass("ok");
-    out.removeClass("fail");
     if (await this.rolarComWidget(out, formula, "", interpretar)) return;
-    out.empty();
-    const v = rollDie(lados);
-    const { html, ok } = interpretar(v);
-    out.toggleClass("ok", ok === true);
-    out.toggleClass("fail", ok === false);
-    setRich(out, html);
+    this.notificar(interpretar(rollDie(lados)).html);
   }
 
   private async rolarD20(
@@ -1187,16 +1171,14 @@ export default class OD2Plugin extends Plugin {
 
   private async rolarDano(out: HTMLElement, label: string, dano: string, sourcePath: string) {
     out.empty();
-    out.removeClass("ok");
-    out.removeClass("fail");
-    out.createSpan({ text: `${label} — dano: ` });
-    if (await this.rolarComWidget(out, String(dano), sourcePath)) return;
-    out.empty();
+    const msg = (total: number) => ({
+      html: `<b>${label}</b> — dano ${dano} = <b>${total}</b>`,
+      ok: null as boolean | null,
+    });
+    if (await this.rolarComWidget(out, String(dano), sourcePath, msg)) return;
     const r = rollExpr(String(dano));
-    setRich(
-      out,
-      `<b>${label}</b> — dano: ${dano} = <b>${r.total}</b>` +
-        (r.rolls.length ? ` <i>[${r.rolls.join(", ")}]</i>` : ""),
+    this.notificar(
+      `${label} — dano ${dano} = ${r.total}` + (r.rolls.length ? ` [${r.rolls.join(", ")}]` : ""),
     );
   }
 
