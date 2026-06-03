@@ -166,6 +166,28 @@ export function notaEquipamento(sistemaMonetario: string[]): string {
   return out.join("\n");
 }
 
+// --- Magias ---
+export function notaMagias(
+  titulo: string,
+  porCirculo: string[][],
+  exclusivas?: Array<{ classe: string; magias: string[] }>,
+): string {
+  const out: string[] = [frontmatter("magias"), `# ${titulo}`, ""];
+  const total = porCirculo.reduce((s, c) => s + c.length, 0);
+  out.push(`> [!info] ${total} magias em ${porCirculo.length} círculos.`, "");
+  porCirculo.forEach((magias, i) => {
+    if (!magias.length) return;
+    out.push(`## ${i + 1}º Círculo`, "", ...magias.map((m) => `- ${m}`), "");
+  });
+  if (exclusivas?.length) {
+    out.push("## Magias exclusivas de especialização", "");
+    for (const e of exclusivas) out.push(`- **${e.classe}:** ${e.magias.join(", ")}`);
+    out.push("");
+  }
+  out.push("_Apenas os nomes por círculo; descrições completas são expansão futura._", FOOTER);
+  return out.join("\n");
+}
+
 export function notaIndice(titulo: string, secoes: Array<{ titulo: string; nomes: string[] }>): string {
   const out: string[] = [frontmatter("indice"), `# ${titulo}`, ""];
   out.push(

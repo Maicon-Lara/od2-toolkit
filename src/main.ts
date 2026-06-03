@@ -24,6 +24,7 @@ import {
 } from "./od2";
 import { BASE_CLASSES, BASE_MONSTROS, BASE_POVOS } from "./basedata";
 import { ARMADURAS, ARMAS, ITENS_GERAIS, SISTEMA_MONETARIO } from "./srd/equipamento";
+import { MAGIAS_ARCANAS, MAGIAS_DIVINAS, MAGIAS_EXCLUSIVAS } from "./srd/magias";
 import {
   notaArmaduras,
   notaArmas,
@@ -31,6 +32,7 @@ import {
   notaEquipamento,
   notaIndice,
   notaItens,
+  notaMagias,
   notaMonstro,
   notaPovo,
 } from "./compendio";
@@ -996,6 +998,7 @@ export default class OD2Plugin extends Plugin {
       await this.ensureFolder(`${base}/Classes`);
       await this.ensureFolder(`${base}/Povos`);
       await this.ensureFolder(`${base}/Equipamento`);
+      await this.ensureFolder(`${base}/Magias`);
       await this.ensureFolder(`${base}/Bestiário`);
 
       for (const c of BASE_CLASSES) {
@@ -1011,6 +1014,10 @@ export default class OD2Plugin extends Plugin {
       conta(await this.writeNote(`${eq}/Armaduras.md`, notaArmaduras(ARMADURAS)));
       conta(await this.writeNote(`${eq}/Itens Gerais.md`, notaItens(ITENS_GERAIS)));
 
+      const mag = `${base}/Magias`;
+      conta(await this.writeNote(`${mag}/Magias Arcanas.md`, notaMagias("Magias Arcanas", MAGIAS_ARCANAS, MAGIAS_EXCLUSIVAS)));
+      conta(await this.writeNote(`${mag}/Magias Divinas.md`, notaMagias("Magias Divinas", MAGIAS_DIVINAS)));
+
       for (const m of BASE_MONSTROS) {
         const body = stringifyYaml(m);
         conta(await this.writeNote(`${base}/Bestiário/${m.nome}.md`, notaMonstro(m.nome, body)));
@@ -1020,6 +1027,7 @@ export default class OD2Plugin extends Plugin {
         { titulo: "Classes", nomes: BASE_CLASSES.map((c) => c.nome) },
         { titulo: "Povos", nomes: BASE_POVOS.map((p) => p.nome) },
         { titulo: "Equipamento", nomes: ["Equipamento", "Armas", "Armaduras", "Itens Gerais"] },
+        { titulo: "Magias", nomes: ["Magias Arcanas", "Magias Divinas"] },
         { titulo: "Bestiário", nomes: BASE_MONSTROS.map((m) => m.nome) },
       ]);
       conta(await this.writeNote(`${base}/${tituloIndice}.md`, indice));
