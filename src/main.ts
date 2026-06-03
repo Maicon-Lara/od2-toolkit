@@ -683,6 +683,18 @@ export default class OD2Plugin extends Plugin {
         inp.value = String(val);
         inp.dataset.talento = t;
         inp.addEventListener("change", () => this.saveTalentos(ctx, el));
+        const btn = row.createEl("button", { cls: "od2-roll", text: "testar" });
+        btn.onclick = () =>
+          this.rolarD20(out, (d20) => {
+            const alvo = (Number(inp.value) || 2) + ajuste;
+            const r = avaliarTeste(d20, alvo);
+            return {
+              html:
+                `<b>${t}</b> — 1d20 = <b>${r.d20}</b> (≤ ${alvo})${ajusteTxt()} → ${r.sucesso ? "✅ sucesso" : "❌ falha"}` +
+                (r.critico ? ` <i>(${r.critico} crítico)</i>` : ""),
+              ok: r.sucesso,
+            };
+          });
       }
       const restam = distribuir - usados;
       const fonteAttr =
