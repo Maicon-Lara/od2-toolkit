@@ -46,12 +46,10 @@ import { avaliarAtaque, avaliarTeste, rollDie, rollExpr } from "./roller";
 interface OD2Settings {
   mostrarCalculo: boolean;
   pastaCompendio: string;
-  dados3d: boolean;
 }
 const DEFAULT_SETTINGS: OD2Settings = {
   mostrarCalculo: true,
   pastaCompendio: "Compêndio OD2",
-  dados3d: true,
 };
 
 const norm = (x: unknown): string => String(x ?? "").trim().toLowerCase();
@@ -344,8 +342,11 @@ export default class OD2Plugin extends Plugin {
     if (sub) head.createDiv({ cls: "od2-sub", text: sub });
     if (d.jogador) head.createDiv({ cls: "od2-sub", text: `Jogador: ${d.jogador}` });
 
-    const out = root.createDiv({ cls: "od2-out", text: "Clique em um botão para rolar." });
-    const showResult = (html: string, _ok?: boolean | null) => this.notificar(html);
+    root.createDiv({
+      cls: "od2-out",
+      text: "Os resultados aparecem no painel do Dice Roller (ou no aviso do canto).",
+    });
+    const showResult = (html: string, _ok?: boolean | null) => this.mostrarResultado("PV", html);
 
     // Seletor de ajuste (OD2): Fácil +2, Difícil −2, etc. Aplica à próxima rolagem.
     let ajuste = 0;
@@ -385,7 +386,7 @@ export default class OD2Plugin extends Plugin {
       card.createDiv({ cls: "od2-attr-val", text: String(v) });
       card.createDiv({ cls: "od2-attr-mod", text: sinal(mod(v)) });
       const btn = card.createEl("button", { cls: "od2-roll", text: "teste" });
-      btn.onclick = () => this.rolarRollUnder(out, 20, v + ajuste, label);
+      btn.onclick = () => this.rolarRollUnder(20, v + ajuste, label);
     }
 
     // --- Combate ---
@@ -415,7 +416,7 @@ export default class OD2Plugin extends Plugin {
     const atkRow = comb.createDiv({ cls: "od2-btn-row" });
     const mkAtk = (label: string, bonus: number) => {
       const b = atkRow.createEl("button", { cls: "od2-roll", text: `${label} (${sinal(bonus)})` });
-      b.onclick = () => this.rolarAtaqueBtn(out, label, bonus + ajuste);
+      b.onclick = () => this.rolarAtaqueBtn(label, bonus + ajuste);
     };
     mkAtk("Corpo a corpo", ac);
     mkAtk("À distância", ad);
@@ -467,10 +468,10 @@ export default class OD2Plugin extends Plugin {
         row.createSpan({ cls: "od2-atk-name", text: a.nome || "—" });
         const atkBonus = num(a.bonus);
         const ba2 = row.createEl("button", { cls: "od2-roll", text: `atacar (${sinal(atkBonus)})` });
-        ba2.onclick = () => this.rolarAtaqueBtn(out, a.nome || "Ataque", atkBonus + ajuste);
+        ba2.onclick = () => this.rolarAtaqueBtn(a.nome || "Ataque", atkBonus + ajuste);
         if (a.dano) {
           const bd = row.createEl("button", { cls: "od2-roll od2-dmg", text: `dano (${a.dano})` });
-          bd.onclick = () => this.rolarDano(out, a.nome || "Ataque", String(a.dano), ctx.sourcePath);
+          bd.onclick = () => this.rolarDano(a.nome || "Ataque", String(a.dano));
         }
         const edit = row.createEl("button", { cls: "od2-mini", text: "✎", attr: { title: "Editar" } });
         edit.onclick = () =>
@@ -511,7 +512,7 @@ export default class OD2Plugin extends Plugin {
       row.createSpan({ cls: "od2-jp-label", text: label });
       row.createSpan({ cls: "od2-jp-val", text: `role ≤ ${final}` });
       const b = row.createEl("button", { cls: "od2-roll", text: "rolar" });
-      b.onclick = () => this.rolarRollUnder(out, 20, final + ajuste, label);
+      b.onclick = () => this.rolarRollUnder(20, final + ajuste, label);
     }
 
     // --- Magias por dia (classes conjuradoras) ---
@@ -633,7 +634,7 @@ export default class OD2Plugin extends Plugin {
         inp.dataset.talento = t;
         inp.addEventListener("change", () => this.saveTalentos(ctx, el));
         const btn = row.createEl("button", { cls: "od2-roll", text: "testar" });
-        btn.onclick = () => this.rolarRollUnder(out, 6, Number(inp.value) || 2, t);
+        btn.onclick = () => this.rolarRollUnder(6, Number(inp.value) || 2, t);
       }
       const restam = distribuir - usados;
       const fonteAttr =
@@ -805,8 +806,11 @@ export default class OD2Plugin extends Plugin {
     }
     if (m.descricao) root.createEl("p", { cls: "od2-mob-desc", text: String(m.descricao) });
 
-    const out = root.createDiv({ cls: "od2-out", text: "Clique para rolar." });
-    const showResult = (html: string, _ok?: boolean | null) => this.notificar(html);
+    root.createDiv({
+      cls: "od2-out",
+      text: "Os resultados aparecem no painel do Dice Roller (ou no aviso do canto).",
+    });
+    const showResult = (html: string, _ok?: boolean | null) => this.mostrarResultado("PV", html);
 
     const stats = root.createDiv({ cls: "od2-stats" });
     const stat = (label: string, value: string) => {
@@ -846,10 +850,10 @@ export default class OD2Plugin extends Plugin {
         row.createSpan({ cls: "od2-atk-name", text: label });
         const bonus = num(a.bonus);
         const ba = row.createEl("button", { cls: "od2-roll", text: `atacar (${sinal(bonus)})` });
-        ba.onclick = () => this.rolarAtaqueBtn(out, label, bonus);
+        ba.onclick = () => this.rolarAtaqueBtn(label, bonus);
         if (a.dano) {
           const bd = row.createEl("button", { cls: "od2-roll od2-dmg", text: `dano (${a.dano})` });
-          bd.onclick = () => this.rolarDano(out, a.nome ?? "ataque", String(a.dano), "");
+          bd.onclick = () => this.rolarDano(a.nome ?? "ataque", String(a.dano));
         }
       }
     }
@@ -1033,69 +1037,65 @@ export default class OD2Plugin extends Plugin {
     }
   }
 
-  // Rola dano usando o Dice Roller (se instalado) ou o motor próprio como fallback.
-  // Resolve a API de rolagem do Dice Roller (getRoller fica no plugin ou em plugin.api).
-  private diceRollerApi(): any {
-    const p = (this.app as any).plugins?.getPlugin?.("obsidian-dice-roller");
-    if (p && typeof p.getRoller === "function") return p;
-    if (p?.api && typeof p.api.getRoller === "function") return p.api;
-    return null;
-  }
-
-  // Sufixo de fórmula que força a animação 3D do Dice Roller (flag |render), conforme a config.
-  private renderFlag(): string {
-    return this.settings.dados3d ? "|render" : "";
-  }
-
   // Mostra o resultado no popup lateral do Obsidian (Notice), sem as tags <b>/<i>.
   private notificar(html: string) {
     new Notice(html.replace(/<[^>]+>/g, ""), 8000);
   }
 
-  // Insere o dado clicável do Dice Roller na ficha (anima 3D no clique do usuário) e
-  // mostra o resultado/interpretação no popup lateral (Notice). false = Dice Roller indisponível.
-  // Rola pelo Dice Roller com source "DICE_ROLLER_VIEW" → o resultado entra no painel
-  // lateral (Dice Tray). Insere também o dado clicável na ficha para animar em 3D.
-  private async rolarComWidget(out: HTMLElement, formula: string): Promise<boolean> {
-    const dr = this.diceRollerApi();
-    if (!dr) return false;
-    try {
-      const roller: any = await dr.getRoller(formula + this.renderFlag(), "DICE_ROLLER_VIEW");
-      if (!roller) return false;
-      if (roller.containerEl) out.appendChild(roller.containerEl);
-      if (typeof roller.roll === "function") await roller.roll();
-      return true;
-    } catch {
-      return false;
+  // Injeta uma entrada no painel "Results" do Dice Roller (Dice Tray), se ele estiver aberto.
+  // `result` é o texto principal (negrito); `formula` aparece pequeno e é o que o "Roll Again" rerola.
+  private adicionarResultadoNoTray(formula: string, result: string): boolean {
+    const leaves = (this.app as any).workspace?.getLeavesOfType?.("DICE_ROLLER_VIEW") ?? [];
+    for (const leaf of leaves) {
+      const view: any = leaf?.view;
+      if (view && typeof view.addResult === "function") {
+        try {
+          view.addResult({
+            result,
+            original: formula,
+            resultText: result,
+            timestamp: Date.now(),
+            id: Math.random().toString(36).slice(2, 14),
+          });
+          return true;
+        } catch {
+          /* ignora e tenta o próximo / fallback */
+        }
+      }
     }
+    return false;
   }
 
-  // Rola `formula` (1 dado) pelo Dice Roller, ou `rollDie(lados)` como fallback;
-  // o resultado/interpretação vai para o popup lateral (Notice).
-  // Teste roll-under (1dN ≤ alvo): rola a comparação no Dice Roller (o painel mostra
-  // sucesso/falha) ou, sem o Dice Roller, calcula e mostra no popup (Notice).
-  private async rolarRollUnder(out: HTMLElement, lados: number, alvo: number, label: string) {
-    out.empty();
-    if (await this.rolarComWidget(out, `1d${lados}<=${alvo}`)) return;
+  // Mostra o resultado: no painel do Dice Roller (se aberto), senão no popup (Notice).
+  private mostrarResultado(formula: string, texto: string) {
+    if (!this.adicionarResultadoNoTray(formula, texto)) this.notificar(texto);
+  }
+
+  // Teste roll-under (1dN ≤ alvo) com regras OD2; mostra "sucesso/falha" no painel/popup.
+  private rolarRollUnder(lados: number, alvo: number, label: string) {
     const v = rollDie(lados);
-    const sucesso = lados === 20 ? avaliarTeste(v, alvo).sucesso : v <= alvo;
-    this.notificar(`${label} — 1d${lados} = ${v} (≤ ${alvo}) → ${sucesso ? "sucesso" : "falha"}`);
+    const r = lados === 20 ? avaliarTeste(v, alvo) : { sucesso: v <= alvo, critico: null as string | null };
+    const crit = r.critico ? ` (${r.critico} crítico)` : "";
+    this.mostrarResultado(
+      `1d${lados}`,
+      `${label} — 1d${lados} = ${v} (≤ ${alvo}) → ${r.sucesso ? "✅ sucesso" : "❌ falha"}${crit}`,
+    );
   }
 
-  // Ataque (1d20 + bônus): rola no Dice Roller (painel mostra o total) ou Notice como fallback.
-  private async rolarAtaqueBtn(out: HTMLElement, label: string, bonus: number) {
-    out.empty();
-    if (await this.rolarComWidget(out, `1d20${sinal(bonus)}`)) return;
+  // Ataque (1d20 + bônus): mostra o total e o crítico no painel/popup.
+  private rolarAtaqueBtn(label: string, bonus: number) {
     const r = avaliarAtaque(rollDie(20), bonus, null);
-    const crit = r.critico === "acerto" ? " (crítico!)" : r.critico === "erro" ? " (erro!)" : "";
-    this.notificar(`${label} — 1d20 (${r.d20}) ${sinal(bonus)} = ${r.total}${crit} vs CA`);
+    const crit = r.critico === "acerto" ? " 🎯 crítico!" : r.critico === "erro" ? " 💥 erro!" : "";
+    this.mostrarResultado(
+      `1d20${sinal(bonus)}`,
+      `${label} — 1d20 (${r.d20}) ${sinal(bonus)} = ${r.total}${crit} (vs CA do alvo)`,
+    );
   }
 
-  private async rolarDano(out: HTMLElement, label: string, dano: string, _sourcePath: string) {
-    out.empty();
-    if (await this.rolarComWidget(out, String(dano))) return;
+  private rolarDano(label: string, dano: string) {
     const r = rollExpr(String(dano));
-    this.notificar(
+    this.mostrarResultado(
+      String(dano),
       `${label} — dano ${dano} = ${r.total}` + (r.rolls.length ? ` [${r.rolls.join(", ")}]` : ""),
     );
   }
@@ -1139,16 +1139,6 @@ class OD2SettingTab extends PluginSettingTab {
             this.plugin.settings.pastaCompendio = v || "Compêndio OD2";
             await this.plugin.saveSettings();
           }),
-      );
-
-    new Setting(containerEl)
-      .setName("Animar dados em 3D")
-      .setDesc("Quando o Dice Roller está instalado, força a animação 3D dos dados (flag |render).")
-      .addToggle((t) =>
-        t.setValue(this.plugin.settings.dados3d).onChange(async (v) => {
-          this.plugin.settings.dados3d = v;
-          await this.plugin.saveSettings();
-        }),
       );
 
     const credito = containerEl.createDiv({ cls: "od2-credito" });
