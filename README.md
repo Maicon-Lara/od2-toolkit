@@ -2,7 +2,9 @@
 
 Fichas de personagem interativas e rolagens para o sistema **Old Dragon 2**, dentro do Obsidian.
 
-> Implementa **mecânicas/números** do sistema (tabela de modificadores, CA ascendente, testes *roll-under*, Jogadas de Proteção). Não distribui texto do livro. Old Dragon™ é marca de seus respectivos detentores; este é um projeto de fã, não oficial.
+> **Projeto de fã, gratuito e não oficial.** Implementa apenas as **mecânicas e números** do sistema (modificadores, CA ascendente, testes *roll-under*, Jogadas de Proteção), adaptados do **SRD gratuito** do Old Dragon 2 — não reproduz o texto dos livros.
+>
+> Old Dragon 2ª edição © 2023 da Old Dragon Editora está licenciado sob [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Old Dragon™ é marca de seus respectivos detentores.
 
 ## Recurso principal: bloco `od2-ficha`
 
@@ -97,6 +99,15 @@ Após a primeira release, abra um PR em
 [`obsidianmd/obsidian-releases`](https://github.com/obsidianmd/obsidian-releases)
 adicionando a entrada do plugin em `community-plugins.json`.
 
-## Licença
+## Licenciamento e atribuição
 
-Código sob licença MIT (ver `LICENSE`).
+Licenciamento duplo:
+
+- **Código** deste plugin: licença **MIT** (ver [`LICENSE`](LICENSE)).
+- **Conteúdo de regras** (tabela de modificadores, progressões de BA/JP, dados de classe e povo em `src/basedata.ts`, etc.) é adaptado do **SRD do Old Dragon 2**, licenciado sob **Creative Commons CC BY-SA 4.0**. As partes deste projeto derivadas do SRD são, portanto, disponibilizadas sob a mesma licença (**CC BY-SA 4.0** — compartilhamento pela mesma licença). Ver [`NOTICE.md`](NOTICE.md).
+
+Atribuição (CC BY-SA 4.0):
+
+> Old Dragon 2ª edição © 2023 da Old Dragon Editora está licenciado sob CC BY-SA 4.0.
+
+Projeto **gratuito e não comercial** de fã. Conforme a [política de licenciamento oficial](https://olddragon.com.br/licenciamento), conteúdo de fã pode ser criado livremente desde que **não seja vendido**.

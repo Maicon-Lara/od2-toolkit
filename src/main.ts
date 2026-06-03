@@ -955,5 +955,17 @@ class OD2SettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }),
       );
+
+    const credito = containerEl.createDiv({ cls: "od2-credito" });
+    credito.createSpan({
+      text: "Old Dragon 2ª edição © 2023 da Old Dragon Editora está licenciado sob ",
+    });
+    credito.createEl("a", {
+      text: "CC BY-SA 4.0",
+      href: "https://creativecommons.org/licenses/by-sa/4.0/",
+    });
+    credito.createSpan({
+      text: ". Projeto de fã, gratuito e não oficial. Regras adaptadas do SRD do OD2.",
+    });
   }
 }

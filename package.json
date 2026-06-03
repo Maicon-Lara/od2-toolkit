@@ -1,6 +1,6 @@
 {
   "name": "od2-toolkit",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Old Dragon 2 toolkit for Obsidian: interactive character sheets and rolls.",
   "main": "main.js",
   "type": "module",
