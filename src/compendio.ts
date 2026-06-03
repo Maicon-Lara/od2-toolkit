@@ -3,6 +3,7 @@
 
 import { ArmaDef, ArmaduraDef, Bonus, ClasseDef, ItemDef, PovoDef, sinal } from "./od2";
 import { ItemMagico } from "./srd/itens-magicos";
+import { MagiaDef } from "./srd/magias";
 
 const FOOTER =
   "\n---\n*Nota gerada pelo Old Dragon 2 Toolkit a partir do SRD. " +
@@ -171,7 +172,7 @@ export function notaEquipamento(sistemaMonetario: string[]): string {
 // --- Magias ---
 export function notaMagias(
   titulo: string,
-  porCirculo: string[][],
+  porCirculo: MagiaDef[][],
   exclusivas?: Array<{ classe: string; magias: string[] }>,
 ): string {
   const out: string[] = [frontmatter("magias"), `# ${titulo}`, ""];
@@ -179,14 +180,14 @@ export function notaMagias(
   out.push(`> [!info] ${total} magias em ${porCirculo.length} círculos.`, "");
   porCirculo.forEach((magias, i) => {
     if (!magias.length) return;
-    out.push(`## ${i + 1}º Círculo`, "", ...magias.map((m) => `- ${m}`), "");
+    out.push(`## ${i + 1}º Círculo`, "", ...magias.map((m) => `- **${m.nome}** — ${m.desc}`), "");
   });
   if (exclusivas?.length) {
     out.push("## Magias exclusivas de especialização", "");
     for (const e of exclusivas) out.push(`- **${e.classe}:** ${e.magias.join(", ")}`);
     out.push("");
   }
-  out.push("_Apenas os nomes por círculo; descrições completas são expansão futura._", FOOTER);
+  out.push(FOOTER);
   return out.join("\n");
 }
 
