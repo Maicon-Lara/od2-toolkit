@@ -24,6 +24,7 @@ import {
 } from "./od2";
 import { BASE_CLASSES, BASE_POVOS } from "./basedata";
 import { BESTIARIO } from "./srd/bestiario";
+import { HUMANOIDES } from "./srd/humanoides";
 import { ARMADURAS, ARMAS, ITENS_GERAIS, SISTEMA_MONETARIO } from "./srd/equipamento";
 import { MAGIAS_ARCANAS, MAGIAS_DIVINAS, MAGIAS_EXCLUSIVAS } from "./srd/magias";
 import { ITENS_MAGICOS } from "./srd/itens-magicos";
@@ -1005,6 +1006,7 @@ export default class OD2Plugin extends Plugin {
       await this.ensureFolder(`${base}/Equipamento`);
       await this.ensureFolder(`${base}/Magias`);
       await this.ensureFolder(`${base}/Bestiário`);
+      await this.ensureFolder(`${base}/Humanos e Semi-humanos`);
 
       for (const c of BASE_CLASSES) {
         conta(await this.writeNote(`${base}/Classes/${safe(c.nome)}.md`, notaClasse(c)));
@@ -1029,6 +1031,10 @@ export default class OD2Plugin extends Plugin {
         const body = stringifyYaml(m);
         conta(await this.writeNote(`${base}/Bestiário/${safe(m.nome)}.md`, notaMonstro(m.nome, body)));
       }
+      for (const m of HUMANOIDES) {
+        const body = stringifyYaml(m);
+        conta(await this.writeNote(`${base}/Humanos e Semi-humanos/${safe(m.nome)}.md`, notaMonstro(m.nome, body)));
+      }
 
       const indice = notaIndice(tituloIndice, [
         { titulo: "Classes", nomes: BASE_CLASSES.map((c) => safe(c.nome)) },
@@ -1037,6 +1043,7 @@ export default class OD2Plugin extends Plugin {
         { titulo: "Magias", nomes: ["Magias Arcanas", "Magias Divinas"] },
         { titulo: "Itens Mágicos", nomes: ["Itens Mágicos"] },
         { titulo: "Bestiário", nomes: BESTIARIO.map((m) => safe(m.nome)) },
+        { titulo: "Humanos e Semi-humanos", nomes: HUMANOIDES.map((m) => safe(m.nome)) },
       ]);
       conta(await this.writeNote(`${base}/${tituloIndice}.md`, indice));
 
