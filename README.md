@@ -68,17 +68,19 @@ Comando: **"Inserir statblock de monstro (OD2)"**.
 ## Compêndio (gerador de referência)
 
 Comando **"Gerar compêndio OD2 (SRD)"** cria uma pasta de notas de referência
-interligadas a partir dos dados do SRD embutidos no plugin:
+interligadas a partir do conteúdo do SRD embutido no plugin:
 
-- `Classes/` — uma nota por classe (progressão de BA/JP, magias por dia, poderes);
-- `Povos/` — uma nota por povo (deslocamento, infravisão, bônus, habilidades);
-- `Bestiário/` — uma nota por criatura, com bloco `od2-monstro` interativo;
+- `Classes/` — 4 classes-base + 16 especializações (progressão de BA/JP, magias por dia, poderes);
+- `Povos/` — os 6 povos (descrição, deslocamento, infravisão, bônus, habilidades);
+- `Equipamento/` — armas, armaduras, itens gerais e sistema monetário;
+- `Magias/` — listas arcanas (1º–9º) e divinas (1º–7º) por círculo;
+- `Itens Mágicos.md` — itens mágicos por categoria;
+- `Bestiário/` — ~200 criaturas (A–Z), cada uma com bloco `od2-monstro` interativo;
 - uma nota-índice ligando tudo.
 
 A pasta de destino é configurável (padrão: `Compêndio OD2`). O comando é **idempotente**:
 ao regenerar, atualiza as notas marcadas com `od2_compendio: true` e **preserva**
-qualquer nota sua de mesmo nome. O bestiário começa com um conjunto inicial e cresce
-conforme novas entradas são adicionadas.
+qualquer nota sua de mesmo nome.
 
 ## Instalação
 
