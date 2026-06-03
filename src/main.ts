@@ -1123,13 +1123,12 @@ export default class OD2Plugin extends Plugin {
     if (!dr) return false;
     try {
       const roller: any = await dr.getRoller(formula + this.renderFlag(), sourcePath || "");
-      if (!roller) return false;
+      // Precisa do widget clicável; sem ele, cai no motor próprio.
+      if (!roller || !roller.containerEl) return false;
       const interpEl = onResult ? out.createSpan({ cls: "od2-interp" }) : null;
-      let aplicado = false;
       const aplicar = () => {
         const total = Number(roller?.result);
         if (!Number.isFinite(total)) return;
-        aplicado = true;
         if (onResult && interpEl) {
           const { html, ok } = onResult(total);
           out.toggleClass("ok", ok === true);
@@ -1139,32 +1138,12 @@ export default class OD2Plugin extends Plugin {
           interpEl.createSpan({ cls: "od2-calc", text: "· Dice Roller" });
         }
       };
+      // Atualiza a interpretação OD2 toda vez que o usuário rolar o dado (clique real = 3D).
       if (typeof roller.on === "function") roller.on("new-result", aplicar);
-      if (roller.containerEl) {
-        out.insertBefore(roller.containerEl, interpEl);
-        // Dispara o 3D do jeito que o clique do usuário no dado faz (após o layout).
-        window.requestAnimationFrame(() => {
-          try {
-            roller.containerEl.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-          } catch {
-            /* ignora */
-          }
-        });
-        // Rede de segurança: se o clique não rolar, rola direto.
-        window.setTimeout(async () => {
-          if (aplicado) return;
-          try {
-            if (typeof roller.roll === "function") await roller.roll();
-          } catch {
-            /* ignora */
-          }
-          aplicar();
-        }, 400);
-        return true;
-      }
-      if (typeof roller.roll === "function") await roller.roll();
-      aplicar();
-      return Number.isFinite(Number(roller?.result));
+      // Insere o dado clicável SEM rolar; o clique do usuário no dado anima em 3D.
+      out.insertBefore(roller.containerEl, interpEl);
+      if (interpEl) interpEl.createSpan({ cls: "od2-calc", text: "clique no dado para rolar 🎲" });
+      return true;
     } catch {
       return false;
     }
