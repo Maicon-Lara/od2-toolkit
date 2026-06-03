@@ -82,6 +82,13 @@ A pasta de destino é configurável (padrão: `Compêndio OD2`). O comando é **
 ao regenerar, atualiza as notas marcadas com `od2_compendio: true` e **preserva**
 qualquer nota sua de mesmo nome.
 
+## Integrações (opcionais)
+
+Detecta automaticamente outros plugins instalados e coopera com eles; se não estiverem presentes, o comportamento padrão é mantido.
+
+- **[Initiative Tracker](https://github.com/Obsidian-TTRPG-Community/initiative-tracker):** botão **"⚔️ + Initiative Tracker"** na ficha e nos statblocks adiciona o personagem/criatura ao combate (nome, PV, CA e modificador de iniciativa).
+- **[Dice Roller](https://github.com/Obsidian-TTRPG-Community/dice-roller):** quando instalado, as rolagens de **dano** passam por ele. As rolagens de d20 (teste, ataque, JP) continuam no motor próprio, ciente das regras do OD2 (roll-under, crítico, ajuste).
+
 ## Instalação
 
 > O plugin ainda **não está na loja oficial** do Obsidian, então use um dos

@@ -107,6 +107,8 @@ button.od2-roll {
 }
 button.od2-roll:hover { background: var(--interactive-accent-hover); }
 button.od2-dmg { background: var(--background-secondary); color: var(--text-normal); }
+button.od2-it { background: var(--background-secondary); color: var(--text-normal); border-color: var(--background-modifier-border); }
+button.od2-it:hover { background: var(--background-modifier-hover); }
 
 .od2-calc { font-size: 0.8em; color: var(--text-muted); margin-top: 0.4rem; font-style: italic; }
 

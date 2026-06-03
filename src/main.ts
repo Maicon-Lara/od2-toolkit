@@ -440,6 +440,12 @@ export default class OD2Plugin extends Plugin {
     mkAtk("Corpo a corpo", ac);
     mkAtk("À distância", ad);
 
+    if (this.temInitiativeTracker()) {
+      const itBtn = atkRow.createEl("button", { cls: "od2-roll od2-it", text: "⚔️ + Initiative Tracker" });
+      itBtn.onclick = () =>
+        this.adicionarAoTracker(d.nome || "Personagem", num(d.pv_atual, num(d.pv_max)), ca, mod(d.destreza));
+    }
+
     if (this.settings.mostrarCalculo) {
       const fonte = classeDef ? ` · BA/JP de ${classeDef.nome} (nível ${nivel})` : "";
       const extraCa = num(d.outros_ca) + num(rb.ca) + cb.ca;
@@ -497,13 +503,7 @@ export default class OD2Plugin extends Plugin {
         };
         if (a.dano) {
           const bd = row.createEl("button", { cls: "od2-roll od2-dmg", text: `dano (${a.dano})` });
-          bd.onclick = () => {
-            const r = rollExpr(String(a.dano));
-            showResult(
-              `<b>${a.nome}</b> — dano: ${a.dano} = <b>${r.total}</b>` +
-                (r.rolls.length ? ` <i>[${r.rolls.join(", ")}]</i>` : ""),
-            );
-          };
+          bd.onclick = () => this.rolarDano(out, a.nome || "Ataque", String(a.dano), ctx.sourcePath);
         }
         const edit = row.createEl("button", { cls: "od2-mini", text: "✎", attr: { title: "Editar" } });
         edit.onclick = () =>
@@ -875,6 +875,11 @@ export default class OD2Plugin extends Plugin {
       };
     }
 
+    if (this.temInitiativeTracker()) {
+      const itBtn = root.createEl("button", { cls: "od2-roll od2-it", text: "⚔️ + Initiative Tracker" });
+      itBtn.onclick = () => this.adicionarAoTracker(m.nome || "Criatura", num(m.pv), m.ca ?? 10, 0);
+    }
+
     if (Array.isArray(m.ataques) && m.ataques.length) {
       const sec = root.createDiv({ cls: "od2-section" });
       sec.createEl("h4", { text: "Ataques" });
@@ -895,13 +900,7 @@ export default class OD2Plugin extends Plugin {
         };
         if (a.dano) {
           const bd = row.createEl("button", { cls: "od2-roll od2-dmg", text: `dano (${a.dano})` });
-          bd.onclick = () => {
-            const r = rollExpr(String(a.dano));
-            showResult(
-              `<b>${a.nome ?? "ataque"}</b> — dano ${a.dano} = <b>${r.total}</b>` +
-                (r.rolls.length ? ` <i>[${r.rolls.join(", ")}]</i>` : ""),
-            );
-          };
+          bd.onclick = () => this.rolarDano(out, a.nome ?? "ataque", String(a.dano), "");
         }
       }
     }
@@ -1055,6 +1054,60 @@ export default class OD2Plugin extends Plugin {
     } catch (e) {
       new Notice("OD2: erro ao gerar o compêndio — " + (e as Error).message);
     }
+  }
+
+  // --- Integrações com outros plugins (feature-detection + fallback) ---
+
+  // Initiative Tracker disponível com a API de adicionar criaturas?
+  private temInitiativeTracker(): boolean {
+    const it = (this.app as any).plugins?.getPlugin?.("initiative-tracker");
+    return !!(it && it.api && typeof it.api.addCreatures === "function");
+  }
+
+  // Adiciona uma criatura/PJ ao Initiative Tracker (nome, PV, CA, modificador de iniciativa).
+  private adicionarAoTracker(nome: string, hp: number, ca: number | string, modifier: number) {
+    const it = (this.app as any).plugins?.getPlugin?.("initiative-tracker");
+    if (!it?.api?.addCreatures) {
+      new Notice("Initiative Tracker não está disponível.");
+      return;
+    }
+    try {
+      const acNum = typeof ca === "number" ? ca : parseInt(String(ca), 10) || 10;
+      it.api.addCreatures([
+        { name: nome || "Criatura", hp: Number(hp) || 0, ac: acNum, modifier: Number(modifier) || 0 },
+      ]);
+      new Notice(`${nome} adicionado ao Initiative Tracker.`);
+    } catch (e) {
+      new Notice("OD2: falha ao adicionar ao Initiative Tracker — " + (e as Error).message);
+    }
+  }
+
+  // Rola dano usando o Dice Roller (se instalado) ou o motor próprio como fallback.
+  private async rolarDano(out: HTMLElement, label: string, dano: string, sourcePath: string) {
+    out.removeClass("ok");
+    out.removeClass("fail");
+    const dr = (this.app as any).plugins?.getPlugin?.("obsidian-dice-roller");
+    if (dr && typeof dr.getRoller === "function") {
+      try {
+        const roller: any = await dr.getRoller(String(dano), sourcePath || "");
+        await roller.roll();
+        const total = roller.result ?? roller.resultText ?? "?";
+        out.empty();
+        out.createEl("b", { text: label });
+        out.appendText(` — dano ${dano} = `);
+        out.createEl("b", { text: String(total) });
+        out.createSpan({ cls: "od2-calc", text: "  · Dice Roller" });
+        return;
+      } catch {
+        /* cai no motor próprio abaixo */
+      }
+    }
+    const r = rollExpr(String(dano));
+    setRich(
+      out,
+      `<b>${label}</b> — dano: ${dano} = <b>${r.total}</b>` +
+        (r.rolls.length ? ` <i>[${r.rolls.join(", ")}]</i>` : ""),
+    );
   }
 
   async loadSettings() {
