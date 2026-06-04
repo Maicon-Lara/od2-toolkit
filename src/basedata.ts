@@ -120,8 +120,6 @@ export const BASE_CLASSES: ClasseDef[] = [
     nome: "Bárbaro", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
     herda: [{ nome: "Aparar" }, { nome: "Maestria em Arma", sem_evolucao: true }],
     poderes: [
-      { nivel: 1, nome: "Aparar", desc: "sacrifica escudo/arma para absorver todo o dano de um ataque físico (vs Grande ou menor)" },
-      { nivel: 1, nome: "Maestria em Arma", desc: "+1 de dano com uma arma à escolha"},
       { nivel: 1, nome: "Vigor Bárbaro", desc: "+2 adicional em todas as Jogadas de Proteção" },
       { nivel: 3, nome: "Talentos Selvagens", desc: "escala e se camufla em ambientes naturais" },
       { nivel: 6, nome: "Surpresa Selvagem", desc: "surpreende inimigos em ambientes naturais (1-4 em 1d6)" },
@@ -132,8 +130,6 @@ export const BASE_CLASSES: ClasseDef[] = [
     nome: "Paladino", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
     herda: [{ nome: "Aparar" }, { nome: "Maestria em Arma", sem_evolucao: true }],
     poderes: [
-      { nivel: 1, nome: "Aparar", desc: "sacrifica escudo/arma para absorver todo o dano de um ataque físico (vs Grande ou menor)" },
-      { nivel: 1, nome: "Maestria em Arma", desc: "+1 de dano com uma arma à escolha"},
       { nivel: 1, nome: "Imunidade a Doenças", desc: "imune a doenças mundanas e mágicas" },
       { nivel: 3, nome: "Cura pelas Mãos", desc: "cura 1 PV por nível, 1×/dia" },
       { nivel: 6, nome: "Aura de Proteção", desc: "proteção contra criaturas caóticas" },
@@ -153,8 +149,6 @@ export const BASE_CLASSES: ClasseDef[] = [
     nome: "Arqueiro", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
     herda: [{ nome: "Aparar" }, { nome: "Maestria em Arma", sem_evolucao: true }],
     poderes: [
-      { nivel: 1, nome: "Aparar", desc: "sacrifica escudo/arma para absorver todo o dano de um ataque físico (vs Grande ou menor)" },
-      { nivel: 1, nome: "Maestria em Arma", desc: "+1 de dano com uma arma à escolha"},
       { nivel: 1, nome: "Tiros em Curva", desc: "tiros contra cobertura, à distância ou em combate não são Difíceis" },
       { nivel: 3, nome: "Puxada Aprimorada", desc: "soma o modificador de Força ao dano com arcos" },
       { nivel: 6, nome: "Truques com Flechas", desc: "realiza efeitos especiais com disparos (desarmar, prender etc.)" },
