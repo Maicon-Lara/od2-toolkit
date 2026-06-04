@@ -10,6 +10,7 @@ import {
   TFolder,
   normalizePath,
   parseYaml,
+  requestUrl,
   stringifyYaml,
 } from "obsidian";
 import {
@@ -76,6 +77,92 @@ function setStrField(d: FichaData, key: keyof FichaData, raw: unknown): void {
   const s = String(raw ?? "").trim();
   if (s === "") delete rec[key];
   else rec[key] = s;
+}
+
+// Extrai o UUID de um personagem do ODO a partir de um link, link .json ou UUID puro.
+function uuidDoODO(input: string): string | null {
+  const s = String(input ?? "").trim();
+  const m = s.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+  return m ? m[0] : null;
+}
+
+// Mapeia o JSON de um personagem do Old Dragon Online (ODO) para o formato da ficha.
+// CA/BA/JP do ODO são valores FINAIS; como o plugin re-soma o modificador, gravamos
+// como override "descontando o mod" para a ficha exibir exatamente os números do ODO.
+function odoParaFicha(j: Record<string, any>): FichaData {
+  const modFor = mod(j.forca);
+  const modDes = mod(j.destreza);
+  const modCon = mod(j.constituicao);
+  const modSab = mod(j.sabedoria);
+
+  const itens: Array<Record<string, any>> = Array.isArray(j.inventory_items) ? j.inventory_items : [];
+  const equipados = itens.filter((it) => it.equipped);
+  const somaCa = (concept: string) =>
+    equipados.filter((it) => it.concept === concept).reduce((a, it) => a + num(it.bonus_ca), 0);
+  const bonusArmadura = somaCa("armor");
+  const bonusEscudo = somaCa("shield");
+  const caBase = 10;
+  const acFinal = num(j.ac, 10);
+  // outros_ca fecha a diferença entre o ac do ODO e o que o plugin calcularia.
+  const outrosCa = acFinal - (caBase + modDes + bonusArmadura + bonusEscudo);
+
+  const ataques = itens
+    .filter((it) => it.concept === "weapon")
+    .map((it) => {
+      const distancia = it.shoot_range || it.throw_range;
+      const bonus = distancia ? num(j.bad) : num(j.bac);
+      const bd = num(it.bonus_damage);
+      const dano = String(it.damage ?? "") + (bd > 0 ? `+${bd}` : "");
+      return { nome: String(it.name ?? "Arma"), bonus, dano };
+    });
+
+  // Tudo que tem peso entra no equipamento (carga); container vira mochila.
+  const equipamento = itens
+    .filter((it) => it.concept !== "container" && it.name)
+    .map((it) => ({ nome: String(it.name), carga: num(it.weight_in_load) }));
+  const mochila = itens.some((it) => it.concept === "container" && num(it.increases_load_by) > 0);
+
+  const raw: Record<string, unknown> = {
+    nome: j.name,
+    jogador: j.owner?.handler,
+    retrato: j.picture,
+    povo: j.character_race?.name,
+    classe: j.character_class?.name,
+    nivel: num(j.level, 1),
+    alinhamento: j.alignment ? String(j.alignment).charAt(0).toUpperCase() + String(j.alignment).slice(1) : undefined,
+    forca: num(j.forca, 10),
+    destreza: num(j.destreza, 10),
+    constituicao: num(j.constituicao, 10),
+    inteligencia: num(j.inteligencia, 10),
+    sabedoria: num(j.sabedoria, 10),
+    carisma: num(j.carisma, 10),
+    pv_max: num(j.max_hp),
+    pv_atual: num(j.health_points, num(j.max_hp)),
+    ca_base: caBase,
+    bonus_armadura: bonusArmadura,
+    bonus_escudo: bonusEscudo,
+    outros_ca: outrosCa,
+    ba: num(j.bac) - modFor,
+    jpd: num(j.jpd) - modDes,
+    jpc: num(j.jpc) - modCon,
+    jps: num(j.jps) - modSab,
+    xp: num(j.experience_points),
+    po: num(j.money_gp),
+    ataques,
+    equipamento,
+    mochila,
+  };
+  // Remove campos vazios/zerados que poluiriam o YAML (mantém atributos e nível).
+  const manterZero = new Set(["forca", "destreza", "constituicao", "inteligencia", "sabedoria", "carisma", "nivel", "ca_base"]);
+  const ficha: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (v == null || v === "") continue;
+    if (v === 0 && !manterZero.has(k)) continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    if (v === false) continue;
+    ficha[k] = v;
+  }
+  return ficha as FichaData;
 }
 
 // Renderiza marcação mínima (<b>/<i>) como nós DOM seguros, sem innerHTML
@@ -279,6 +366,28 @@ export default class OD2Plugin extends Plugin {
       id: "inserir-monstro-od2",
       name: "Inserir statblock de monstro (OD2)",
       editorCallback: (editor) => editor.replaceSelection(SKELETON_MONSTRO),
+    });
+
+    this.addCommand({
+      id: "importar-odo",
+      name: "Importar personagem do ODO (Old Dragon Online)",
+      editorCallback: (editor) => {
+        new OD2FormModal(
+          this.app,
+          "Importar personagem do Old Dragon Online",
+          [
+            {
+              key: "url",
+              label: "Link ou ID do personagem",
+              placeholder: "https://olddragon.com.br/personagens/…",
+            },
+          ],
+          async (v) => {
+            const bloco = await this.importarODO(v.url);
+            if (bloco) editor.replaceSelection(bloco);
+          },
+        ).open();
+      },
     });
 
     this.addCommand({
@@ -1012,6 +1121,32 @@ export default class OD2Plugin extends Plugin {
         li.createEl("b", { text: h.nome! });
         if (h.desc) li.appendText(` — ${h.desc}`);
       }
+    }
+  }
+
+  // Baixa um personagem do Old Dragon Online (ODO) e devolve o bloco od2-ficha pronto.
+  // Usa requestUrl (API do Obsidian) para evitar bloqueio de CORS.
+  private async importarODO(input: string): Promise<string | null> {
+    const uuid = uuidDoODO(input);
+    if (!uuid) {
+      new Notice("OD2: link/ID inválido. Cole o link da ficha em olddragon.com.br.");
+      return null;
+    }
+    const url = `https://olddragon.com.br/personagens/${uuid}.json`;
+    try {
+      const resp = await requestUrl({ url });
+      const j = resp.json as Record<string, any>;
+      if (!j || !j.name) {
+        new Notice("OD2: resposta inesperada do ODO — o personagem é público?");
+        return null;
+      }
+      const ficha = odoParaFicha(j);
+      const yaml = stringifyYaml(ficha).replace(/\n+$/, "");
+      new Notice(`OD2: “${j.name}” importado do ODO.`);
+      return "```od2-ficha\n" + yaml + "\n```\n";
+    } catch (e) {
+      new Notice("OD2: falha ao importar do ODO — " + (e as Error).message);
+      return null;
     }
   }
 
