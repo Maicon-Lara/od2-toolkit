@@ -650,7 +650,8 @@ export default class OD2Plugin extends Plugin {
           : classeDef?.base === "Mago"
             ? d.inteligencia
             : undefined;
-      const extras = magicAttr != null ? magiasExtras(magicAttr) : [0, 0, 0];
+      const semExtra = classeDef?.magias_sem_extra_atributo === true;
+      const extras = magicAttr != null && !semExtra ? magiasExtras(magicAttr) : [0, 0, 0];
       const sec = root.createDiv({ cls: "od2-section od2-magias-sec" });
       sec.createEl("h3", { text: "Magias por dia" });
       magiasNivel.forEach((qtd, i) => {

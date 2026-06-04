@@ -110,6 +110,9 @@ export interface ClasseDef {
   jp?: number[];
   // Magias por dia: índice = nível-1; cada item = slots por círculo [1º, 2º, ...].
   magias?: number[][];
+  // Algumas especializações conjuradoras NÃO recebem magias adicionais por atributo
+  // alto (Tabela 1.1). Quando true, o cálculo de magias extras é ignorado.
+  magias_sem_extra_atributo?: boolean;
   // Bônus de classe ganhos por nível (somados quando nivel >= o indicado).
   bonus_por_nivel?: Array<{ nivel?: number } & Bonus>;
   // Talentos/perícias da classe e o atributo que dá pontos extras no 1º nível.
