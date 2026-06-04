@@ -204,7 +204,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   // Ladrão
   {
     nome: "Ranger", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
-    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    talentos: ["Armadilha", "Escalar", "Furtividade", "Percepção", "Rastrear"], talentos_atributo: "destreza",
     poderes: [
       { nivel: 1, nome: "Inimigo Mortal", desc: "ataques contra Orcs, Goblins, Homens-Lagarto, Trolls ou Gigantes são Fáceis" },
       { nivel: 3, nome: "Combativo", desc: "usa armas grandes e escudos sem penalidade" },
@@ -214,7 +214,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Bardo", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
-    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    talentos: ["Escalar", "Furtividade", "Punga", "Cultura", "Decifrar"], talentos_atributo: "destreza",
     herda: [{ nome: "Ouvir Ruídos" }],
     poderes: [
       { nivel: 1, nome: "Influenciar", desc: "modifica reações de NPCs com música/oratória (±1 no teste)" },
@@ -225,7 +225,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Assassino", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
-    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    talentos: ["Arrombar", "Escalar", "Furtividade", "Veneno", "Disfarce"], talentos_atributo: "destreza",
     poderes: [
       { nivel: 1, nome: "Ataque Assassino", desc: "ataque furtivo causa dano ×2" },
       { nivel: 3, nome: "Espreitar", desc: "observar 1 rodada torna o ataque Fácil; 4 rodadas, Muito Fácil" },
@@ -235,7 +235,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Halfling Aventureiro", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
-    talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    talentos: ["Arrombar", "Escalar", "Furtividade", "Punga", "Senso de Perigo"], talentos_atributo: "destreza",
     poderes: [
       { nivel: 1, nome: "Arma Racial", desc: "+2 de dano com uma arma de arremesso à escolha" },
       { nivel: 3, nome: "Valente", desc: "imune a medo/terror; testes contra intimidação são Fáceis" },
