@@ -26,6 +26,12 @@ export interface FichaData {
   jpd?: number;
   jpc?: number;
   jps?: number;
+  // Bônus manuais somados POR CIMA do cálculo automático da classe/nível
+  // (escolhas de raça "à escolha", poderes não modelados, itens mágicos etc.).
+  bonus_ba?: number;
+  bonus_jpd?: number;
+  bonus_jpc?: number;
+  bonus_jps?: number;
   po?: number;
   ataques?: Array<{ nome: string; bonus?: number; dano?: string }>;
   // Magias memorizadas por círculo (ex.: {"1": ["Sono", ""], "2": ["Escudo Arcano"]}).

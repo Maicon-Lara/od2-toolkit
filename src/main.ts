@@ -56,6 +56,28 @@ const norm = (x: unknown): string => String(x ?? "").trim().toLowerCase();
 const atLevel = (arr: number[] | undefined, nivel: number): number | undefined =>
   Array.isArray(arr) && arr.length ? arr[Math.min(Math.max(nivel, 1), arr.length) - 1] : undefined;
 
+// Grava um campo numérico vindo de um formulário; vazio (ou 0, salvo keepZero) remove
+// a chave para manter o YAML limpo.
+function setNumField(d: FichaData, key: keyof FichaData, raw: unknown, keepZero = false): void {
+  const rec = d as Record<string, unknown>;
+  const s = String(raw ?? "").trim();
+  if (s === "") {
+    delete rec[key];
+    return;
+  }
+  const n = num(s);
+  if (n === 0 && !keepZero) delete rec[key];
+  else rec[key] = n;
+}
+
+// Grava um campo de texto; vazio remove a chave.
+function setStrField(d: FichaData, key: keyof FichaData, raw: unknown): void {
+  const rec = d as Record<string, unknown>;
+  const s = String(raw ?? "").trim();
+  if (s === "") delete rec[key];
+  else rec[key] = s;
+}
+
 // Renderiza marcação mínima (<b>/<i>) como nós DOM seguros, sem innerHTML
 // (a revisão de plugins do Obsidian desaconselha innerHTML por segurança).
 function setRich(el: HTMLElement, markup: string): void {
@@ -306,13 +328,14 @@ export default class OD2Plugin extends Plugin {
       }
     }
 
-    // Auto-preenchimento (override manual da ficha) + bônus de raça/classe.
+    // Auto-preenchimento (override manual da ficha) + bônus de raça/classe + bônus manuais.
+    // Os campos bonus_* somam POR CIMA do cálculo automático (não substituem).
     const baAuto = atLevel(classeDef?.ba, nivel);
     const jpBaseAuto = atLevel(classeDef?.jp, nivel);
-    const ba = d.ba != null ? num(d.ba) : (baAuto ?? 0) + num(rb.ba) + cb.ba;
-    const jpdBase = d.jpd != null ? num(d.jpd) : (jpBaseAuto ?? 0) + num(rb.jpd) + cb.jpd;
-    const jpcBase = d.jpc != null ? num(d.jpc) : (jpBaseAuto ?? 0) + num(rb.jpc) + cb.jpc;
-    const jpsBase = d.jps != null ? num(d.jps) : (jpBaseAuto ?? 0) + num(rb.jps) + cb.jps;
+    const ba = (d.ba != null ? num(d.ba) : (baAuto ?? 0) + num(rb.ba) + cb.ba) + num(d.bonus_ba);
+    const jpdBase = (d.jpd != null ? num(d.jpd) : (jpBaseAuto ?? 0) + num(rb.jpd) + cb.jpd) + num(d.bonus_jpd);
+    const jpcBase = (d.jpc != null ? num(d.jpc) : (jpBaseAuto ?? 0) + num(rb.jpc) + cb.jpc) + num(d.bonus_jpc);
+    const jpsBase = (d.jps != null ? num(d.jps) : (jpBaseAuto ?? 0) + num(rb.jps) + cb.jps) + num(d.bonus_jps);
     let desloc = d.deslocamento != null ? num(d.deslocamento) : num(rb.deslocamento ?? povoDef?.deslocamento, 9);
 
     // Carga: capacidade = maior entre FOR e CON (+5 com mochila); excesso = sobrecarga.
@@ -340,7 +363,32 @@ export default class OD2Plugin extends Plugin {
       .filter(Boolean)
       .join("  ·  ");
     if (sub) head.createDiv({ cls: "od2-sub", text: sub });
+    if (d.xp != null) head.createDiv({ cls: "od2-sub", text: `XP: ${d.xp}` });
     if (d.jogador) head.createDiv({ cls: "od2-sub", text: `Jogador: ${d.jogador}` });
+    this.editBtn(
+      head,
+      ctx,
+      el,
+      "Identificação",
+      [
+        { key: "jogador", label: "Jogador", value: d.jogador ?? "" },
+        { key: "retrato", label: "Retrato (wikilink/URL)", value: d.retrato ?? "" },
+        { key: "povo", label: "Povo", value: d.povo ?? "" },
+        { key: "classe", label: "Classe", value: d.classe ?? "" },
+        { key: "nivel", label: "Nível", type: "number", value: num(d.nivel, 1) },
+        { key: "xp", label: "XP", type: "number", value: d.xp ?? "" },
+        { key: "alinhamento", label: "Alinhamento", value: d.alinhamento ?? "" },
+      ],
+      (data, v) => {
+        setStrField(data, "jogador", v.jogador);
+        setStrField(data, "retrato", v.retrato);
+        setStrField(data, "povo", v.povo);
+        setStrField(data, "classe", v.classe);
+        setNumField(data, "nivel", v.nivel, true);
+        setNumField(data, "xp", v.xp, true);
+        setStrField(data, "alinhamento", v.alinhamento);
+      },
+    );
 
     root.createDiv({
       cls: "od2-out",
@@ -370,7 +418,32 @@ export default class OD2Plugin extends Plugin {
     const ajusteTxt = () => (ajuste ? ` <i>(ajuste ${sinal(ajuste)})</i>` : "");
 
     // --- Atributos ---
-    const grid = root.createDiv({ cls: "od2-attrs" });
+    const attrSec = root.createDiv({ cls: "od2-section od2-attrs-sec" });
+    const attrHead = attrSec.createDiv({ cls: "od2-sec-head" });
+    attrHead.createEl("h3", { text: "Atributos" });
+    this.editBtn(
+      attrHead,
+      ctx,
+      el,
+      "Atributos",
+      [
+        { key: "forca", label: "Força (FOR)", type: "number", value: num(d.forca, 10) },
+        { key: "destreza", label: "Destreza (DES)", type: "number", value: num(d.destreza, 10) },
+        { key: "constituicao", label: "Constituição (CON)", type: "number", value: num(d.constituicao, 10) },
+        { key: "inteligencia", label: "Inteligência (INT)", type: "number", value: num(d.inteligencia, 10) },
+        { key: "sabedoria", label: "Sabedoria (SAB)", type: "number", value: num(d.sabedoria, 10) },
+        { key: "carisma", label: "Carisma (CAR)", type: "number", value: num(d.carisma, 10) },
+      ],
+      (data, v) => {
+        setNumField(data, "forca", v.forca, true);
+        setNumField(data, "destreza", v.destreza, true);
+        setNumField(data, "constituicao", v.constituicao, true);
+        setNumField(data, "inteligencia", v.inteligencia, true);
+        setNumField(data, "sabedoria", v.sabedoria, true);
+        setNumField(data, "carisma", v.carisma, true);
+      },
+    );
+    const grid = attrSec.createDiv({ cls: "od2-attrs" });
     const attrs: Array<[string, keyof FichaData]> = [
       ["FOR", "forca"],
       ["DES", "destreza"],
@@ -391,7 +464,37 @@ export default class OD2Plugin extends Plugin {
 
     // --- Combate ---
     const comb = root.createDiv({ cls: "od2-section" });
-    comb.createEl("h3", { text: "Combate" });
+    const combHead = comb.createDiv({ cls: "od2-sec-head" });
+    combHead.createEl("h3", { text: "Combate" });
+    const autoDesloc = num(rb.deslocamento ?? povoDef?.deslocamento, 9);
+    this.editBtn(
+      combHead,
+      ctx,
+      el,
+      "Combate",
+      [
+        { key: "ca_base", label: "CA base", type: "number", value: num(d.ca_base, 10) },
+        { key: "bonus_armadura", label: "Bônus de armadura", type: "number", value: num(d.bonus_armadura) },
+        { key: "bonus_escudo", label: "Bônus de escudo", type: "number", value: num(d.bonus_escudo) },
+        { key: "outros_ca", label: "Outros bônus de CA", type: "number", value: num(d.outros_ca) },
+        { key: "bonus_ba", label: "Bônus manual de BA (+ tabela)", type: "number", value: num(d.bonus_ba) },
+        {
+          key: "deslocamento",
+          label: "Deslocamento (vazio = automático)",
+          type: "number",
+          value: d.deslocamento ?? "",
+          placeholder: `${autoDesloc} m (povo)`,
+        },
+      ],
+      (data, v) => {
+        setNumField(data, "ca_base", v.ca_base, true);
+        setNumField(data, "bonus_armadura", v.bonus_armadura);
+        setNumField(data, "bonus_escudo", v.bonus_escudo);
+        setNumField(data, "outros_ca", v.outros_ca);
+        setNumField(data, "bonus_ba", v.bonus_ba);
+        setNumField(data, "deslocamento", v.deslocamento);
+      },
+    );
     const caBaseEff = rb.ca_base != null ? num(rb.ca_base) : num(d.ca_base, 10);
     const ca =
       caBaseEff +
@@ -429,10 +532,11 @@ export default class OD2Plugin extends Plugin {
 
     if (this.settings.mostrarCalculo) {
       const fonte = classeDef ? ` · BA/JP de ${classeDef.nome} (nível ${nivel})` : "";
+      const baManual = num(d.bonus_ba) ? ` · BA inclui ${sinal(num(d.bonus_ba))} manual` : "";
       const extraCa = num(d.outros_ca) + num(rb.ca) + cb.ca;
       comb.createDiv({
         cls: "od2-calc",
-        text: `CA = ${caBaseEff} ${sinal(mod(d.destreza))} (DES) + ${num(d.bonus_armadura)} arm. + ${num(d.bonus_escudo)} esc.${extraCa ? ` + ${extraCa} outros` : ""}${fonte}`,
+        text: `CA = ${caBaseEff} ${sinal(mod(d.destreza))} (DES) + ${num(d.bonus_armadura)} arm. + ${num(d.bonus_escudo)} esc.${extraCa ? ` + ${extraCa} outros` : ""}${fonte}${baManual}`,
       });
     }
 
@@ -500,17 +604,35 @@ export default class OD2Plugin extends Plugin {
 
     // --- Jogadas de Proteção ---
     const jp = root.createDiv({ cls: "od2-section" });
-    jp.createEl("h3", { text: "Jogadas de Proteção" });
-    const jpRows: Array<[string, number, keyof FichaData]> = [
-      ["JPD — esquiva", jpdBase, "destreza"],
-      ["JPC — vigor", jpcBase, "constituicao"],
-      ["JPS — firmeza", jpsBase, "sabedoria"],
+    const jpHead = jp.createDiv({ cls: "od2-sec-head" });
+    jpHead.createEl("h3", { text: "Jogadas de Proteção" });
+    this.editBtn(
+      jpHead,
+      ctx,
+      el,
+      "Bônus de Jogadas de Proteção",
+      [
+        { key: "bonus_jpd", label: "Bônus JPD — esquiva (+ tabela)", type: "number", value: num(d.bonus_jpd) },
+        { key: "bonus_jpc", label: "Bônus JPC — vigor (+ tabela)", type: "number", value: num(d.bonus_jpc) },
+        { key: "bonus_jps", label: "Bônus JPS — firmeza (+ tabela)", type: "number", value: num(d.bonus_jps) },
+      ],
+      (data, v) => {
+        setNumField(data, "bonus_jpd", v.bonus_jpd);
+        setNumField(data, "bonus_jpc", v.bonus_jpc);
+        setNumField(data, "bonus_jps", v.bonus_jps);
+      },
+    );
+    const jpRows: Array<[string, number, keyof FichaData, number]> = [
+      ["JPD — esquiva", jpdBase, "destreza", num(d.bonus_jpd)],
+      ["JPC — vigor", jpcBase, "constituicao", num(d.bonus_jpc)],
+      ["JPS — firmeza", jpsBase, "sabedoria", num(d.bonus_jps)],
     ];
-    for (const [label, base, attrKey] of jpRows) {
+    for (const [label, base, attrKey, bonus] of jpRows) {
       const final = jpFinal(base, d[attrKey]);
       const row = jp.createDiv({ cls: "od2-jp" });
       row.createSpan({ cls: "od2-jp-label", text: label });
-      row.createSpan({ cls: "od2-jp-val", text: `role ≤ ${final}` });
+      const valTxt = `role ≤ ${final}` + (bonus ? ` (inclui ${sinal(bonus)} manual)` : "");
+      row.createSpan({ cls: "od2-jp-val", text: valTxt });
       const b = row.createEl("button", { cls: "od2-roll", text: "rolar" });
       b.onclick = () => this.rolarRollUnder(20, final + ajuste, label);
     }
@@ -869,6 +991,37 @@ export default class OD2Plugin extends Plugin {
         if (h.desc) li.appendText(` — ${h.desc}`);
       }
     }
+  }
+
+  // Abre um modal de formulário e grava as alterações no bloco da ficha.
+  private openEdit(
+    ctx: MarkdownPostProcessorContext,
+    el: HTMLElement,
+    titulo: string,
+    campos: CampoForm[],
+    apply: (d: FichaData, vals: Record<string, string>) => void,
+  ) {
+    new OD2FormModal(this.app, titulo, campos, (vals) =>
+      this.rewriteFicha(ctx, el, (d) => apply(d, vals)),
+    ).open();
+  }
+
+  // Cria um botão ✎ que abre o modal de edição de uma seção.
+  private editBtn(
+    parent: HTMLElement,
+    ctx: MarkdownPostProcessorContext,
+    el: HTMLElement,
+    titulo: string,
+    campos: CampoForm[],
+    apply: (d: FichaData, vals: Record<string, string>) => void,
+  ): HTMLButtonElement {
+    const b = parent.createEl("button", {
+      cls: "od2-mini od2-edit",
+      text: "✎",
+      attr: { title: `Editar — ${titulo}` },
+    });
+    b.onclick = () => this.openEdit(ctx, el, titulo, campos, apply);
+    return b;
   }
 
   // Lê o YAML do bloco od2-ficha, aplica `mutate` ao objeto e regrava o bloco inteiro.

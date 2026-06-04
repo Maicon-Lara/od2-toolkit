@@ -41,6 +41,11 @@ button.od2-mini {
 }
 .od2-atk .od2-mini:not(:first-of-type) { margin-left: 0.3rem; }
 button.od2-mini:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+
+/* Botão ✎ de editar seção. No cabeçalho fica logo abaixo da identificação;
+   nos cabeçalhos de seção (od2-sec-head) o margin-left:auto o joga pra direita. */
+.od2-head > button.od2-edit { margin-top: 0.4rem; margin-left: 0; }
+.od2-attrs-sec .od2-attrs { margin-top: 0.4rem; }
 button.od2-del:hover { color: #fff; background: #c0392b; border-color: #c0392b; }
 
 .od2-out {
