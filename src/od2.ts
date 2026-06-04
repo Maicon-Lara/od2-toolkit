@@ -115,6 +115,10 @@ export interface ClasseDef {
   // Talentos/perícias da classe e o atributo que dá pontos extras no 1º nível.
   talentos?: string[];
   talentos_atributo?: "destreza" | "carisma" | "maior";
+  // Poderes da classe-base que esta especialização MANTÉM (por nome do poder).
+  // sem_evolucao = mantém o poder do 1º nível, mas descarta as melhorias de níveis
+  // superiores (ex.: Guerreiro especialista mantém Maestria mas não evolui).
+  herda?: Array<{ nome: string; sem_evolucao?: boolean }>;
   poderes?: Array<{
     nivel?: number;
     nome?: string;

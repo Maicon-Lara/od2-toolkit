@@ -677,12 +677,44 @@ export default class OD2Plugin extends Plugin {
       });
     }
 
-    // --- Poderes (povo + classe, automáticos) ---
+    // --- Poderes (povo + classe + herdados da classe-base) ---
+    type Poder = NonNullable<ClasseDef["poderes"]>[number];
     const poderesPovo = (povoDef?.habilidades ?? []).filter((h) => h && h.nome);
     const poderesClasse = (classeDef?.poderes ?? []).filter(
       (p) => p && p.nome && num(p.nivel, 1) <= nivel,
     );
-    if (poderesPovo.length || poderesClasse.length) {
+    // Poderes que a especialização mantém da classe-base (declarados em `herda`).
+    const poderesHerdados: Poder[] = [];
+    if (classeDef?.herda?.length && classeDef.base && norm(classeDef.base) !== norm(classeDef.nome)) {
+      const baseDef = this.classes.get(norm(classeDef.base));
+      const porNome = new Map((baseDef?.poderes ?? []).map((p) => [norm(p.nome), p]));
+      for (const h of classeDef.herda) {
+        const p = porNome.get(norm(h.nome));
+        if (!p || num(p.nivel, 1) > nivel) continue;
+        poderesHerdados.push(h.sem_evolucao ? { ...p, melhorias: [] } : p);
+      }
+    }
+
+    // Renderiza um poder (com suas melhorias até o nível atual) como item de lista.
+    const renderPoder = (ul: HTMLElement, p: Poder) => {
+      const li = ul.createEl("li");
+      li.createSpan({ cls: "od2-nivel", text: `[${num(p.nivel, 1)}º] ` });
+      li.createEl("b", { text: p.nome! });
+      if (p.desc) li.appendText(` — ${p.desc}`);
+      const melhorias = (p.melhorias ?? []).filter(
+        (m) => m && m.desc && num(m.nivel, 1) <= nivel,
+      );
+      if (melhorias.length) {
+        const sub = li.createEl("ul", { cls: "od2-melhorias" });
+        for (const m of melhorias) {
+          const sli = sub.createEl("li");
+          sli.createSpan({ cls: "od2-nivel", text: `${num(m.nivel, 1)}º: ` });
+          sli.appendText(m.desc!);
+        }
+      }
+    };
+
+    if (poderesPovo.length || poderesClasse.length || poderesHerdados.length) {
       const sec = root.createDiv({ cls: "od2-section od2-poderes" });
       sec.createEl("h3", { text: "Poderes" });
       if (poderesPovo.length) {
@@ -697,23 +729,12 @@ export default class OD2Plugin extends Plugin {
       if (poderesClasse.length) {
         sec.createEl("h4", { text: `Classe — ${classeDef?.nome ?? d.classe}` });
         const ul = sec.createEl("ul");
-        for (const p of poderesClasse) {
-          const li = ul.createEl("li");
-          li.createSpan({ cls: "od2-nivel", text: `[${num(p.nivel, 1)}º] ` });
-          li.createEl("b", { text: p.nome! });
-          if (p.desc) li.appendText(` — ${p.desc}`);
-          const melhorias = (p.melhorias ?? []).filter(
-            (m) => m && m.desc && num(m.nivel, 1) <= nivel,
-          );
-          if (melhorias.length) {
-            const sub = li.createEl("ul", { cls: "od2-melhorias" });
-            for (const m of melhorias) {
-              const sli = sub.createEl("li");
-              sli.createSpan({ cls: "od2-nivel", text: `${num(m.nivel, 1)}º: ` });
-              sli.appendText(m.desc!);
-            }
-          }
-        }
+        for (const p of poderesClasse) renderPoder(ul, p);
+      }
+      if (poderesHerdados.length) {
+        sec.createEl("h4", { text: `Herdado de ${classeDef?.base}` });
+        const ul = sec.createEl("ul");
+        for (const p of poderesHerdados) renderPoder(ul, p);
       }
     } else if (d.povo || d.classe) {
       root

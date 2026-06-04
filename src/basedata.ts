@@ -118,6 +118,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   // Guerreiro
   {
     nome: "Bárbaro", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
+    herda: [{ nome: "Aparar" }, { nome: "Maestria em Arma", sem_evolucao: true }],
     poderes: [
       { nivel: 1, nome: "Aparar", desc: "sacrifica escudo/arma para absorver todo o dano de um ataque físico (vs Grande ou menor)" },
       { nivel: 1, nome: "Maestria em Arma", desc: "+1 de dano com uma arma à escolha"},
@@ -129,6 +130,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Paladino", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
+    herda: [{ nome: "Aparar" }, { nome: "Maestria em Arma", sem_evolucao: true }],
     poderes: [
       { nivel: 1, nome: "Aparar", desc: "sacrifica escudo/arma para absorver todo o dano de um ataque físico (vs Grande ou menor)" },
       { nivel: 1, nome: "Maestria em Arma", desc: "+1 de dano com uma arma à escolha"},
@@ -149,6 +151,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Arqueiro", base: "Guerreiro", dado_vida: 10, ba: guerreiro.ba, jp: guerreiro.jp,
+    herda: [{ nome: "Aparar" }, { nome: "Maestria em Arma", sem_evolucao: true }],
     poderes: [
       { nivel: 1, nome: "Aparar", desc: "sacrifica escudo/arma para absorver todo o dano de um ataque físico (vs Grande ou menor)" },
       { nivel: 1, nome: "Maestria em Arma", desc: "+1 de dano com uma arma à escolha"},
@@ -161,6 +164,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   // Clérigo
   {
     nome: "Druida", base: "Clérigo", dado_vida: 8, ba: clerigo.ba, jp: clerigo.jp, magias: clerigoMagias,
+    herda: [{ nome: "Magias Divinas" }],
     poderes: [
       { nivel: 1, nome: "Herbalismo", desc: "identifica plantas, animais e água pura" },
       { nivel: 3, nome: "Previdência", desc: "acampamentos nos ermos são sempre seguros" },
@@ -170,6 +174,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Acadêmico", base: "Clérigo", dado_vida: 8, ba: clerigo.ba, jp: clerigo.jp, magias: clerigoMagias,
+    herda: [{ nome: "Magias Divinas" }],
     poderes: [
       { nivel: 1, nome: "Conhecimento Acadêmico", desc: "identifica monstros e fraquezas (1-2 em 1d6)" },
       { nivel: 3, nome: "Decifrar Linguagens", desc: "decodifica textos e idiomas (1-3 em 1d6)" },
@@ -179,6 +184,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Xamã", base: "Clérigo", dado_vida: 8, ba: clerigo.ba, jp: clerigo.jp, magias: clerigoMagias,
+    herda: [{ nome: "Magias Divinas" }],
     poderes: [
       { nivel: 1, nome: "Animal Sagrado", desc: "o símbolo divino concede ataques Fáceis aos aliados" },
       { nivel: 3, nome: "Cura Totêmica", desc: "troca magia memorizada por Curar Ferimentos de 1º círculo (1d8)" },
@@ -209,6 +215,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   {
     nome: "Bardo", base: "Ladrão", dado_vida: 6, ba: ladrao.ba, jp: ladrao.jp,
     talentos: ["Armadilha", "Arrombar", "Escalar", "Furtividade", "Punga"], talentos_atributo: "destreza",
+    herda: [{ nome: "Ouvir Ruídos" }],
     poderes: [
       { nivel: 1, nome: "Influenciar", desc: "modifica reações de NPCs com música/oratória (±1 no teste)" },
       { nivel: 3, nome: "Inspirar", desc: "aliados inspirados fazem testes como um grau mais fácil" },
@@ -239,6 +246,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   // Mago
   {
     nome: "Ilusionista", base: "Mago", dado_vida: 4, ba: mago.ba, jp: mago.jp, magias: magoMagias,
+    herda: [{ nome: "Magias Arcanas" }, { nome: "Ler Magias" }, { nome: "Detectar Magias" }],
     poderes: [
       { nivel: 1, nome: "Magias Exclusivas", desc: "acesso a Ilusão e Som Ilusório (1×/dia, sem memorizar)" },
       { nivel: 3, nome: "Ilusão Melhorada", desc: "magia exclusiva adicional" },
@@ -248,6 +256,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Necromante", base: "Mago", dado_vida: 4, ba: mago.ba, jp: mago.jp, magias: magoMagias,
+    herda: [{ nome: "Magias Arcanas" }, { nome: "Ler Magias" }, { nome: "Detectar Magias" }],
     poderes: [
       { nivel: 1, nome: "Magias Exclusivas", desc: "acesso a Toque Sombrio e Aterrorizar (1×/dia, sem memorizar)" },
       { nivel: 3, nome: "Criar Mortos-Vivos", desc: "magia exclusiva adicional" },
@@ -257,6 +266,7 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
   {
     nome: "Bruxo", base: "Mago", dado_vida: 4, ba: mago.ba, jp: mago.jp,
+    herda: [{ nome: "Ler Magias" }, { nome: "Detectar Magias" }],
     poderes: [
       { nivel: 1, nome: "Iniciado", desc: "conjura magias via rituais (1 rodada); usa armas médias e armaduras leves" },
       { nivel: 3, nome: "Médium", desc: "acesso a magias de 2º círculo; usa armas grandes" },
