@@ -60,6 +60,23 @@ Todas as edições reescrevem o YAML do bloco automaticamente — não é precis
 
 Comando: **"Inserir ficha de personagem (OD2)"** insere um esqueleto pronto.
 
+### Bônus manuais e edição por seção
+Cada seção da ficha (Identificação, Atributos, Combate, Jogadas de Proteção) tem um botão **✎** que abre um formulário e grava direto no bloco. Além dos campos calculados, há campos de **bônus somados por cima** do cálculo automático — `bonus_ba`, `bonus_jpd`, `bonus_jpc`, `bonus_jps` — para bônus que o sistema não preenche sozinho (escolhas de raça "à escolha", poderes específicos, itens mágicos).
+
+## Importar personagem do Old Dragon Online (ODO)
+
+Comando **"Importar personagem do ODO (Old Dragon Online)"**: cole o link (ou o ID) de uma ficha pública em [olddragon.com.br](https://olddragon.com.br) e o plugin baixa o personagem e insere um bloco `od2-ficha` preenchido no ponto do cursor.
+
+```
+https://olddragon.com.br/personagens/5e0c675a-18d2-48f6-b1a4-fe2b18cac9b3
+```
+
+São mapeados: atributos, PV, XP, PO, retrato, povo, classe, nível e alinhamento; CA, BA e Jogadas de Proteção (ajustados para exibir exatamente os valores do ODO); ataques (armas) e equipamento com carga (mochila inclusa). Observações:
+
+- O personagem precisa ser **público** no ODO.
+- **Povo e classe** entram como texto — se o nome bater com uma definição reconhecida, os poderes aparecem; senão, ajuste o nome ou crie a nota de definição.
+- Modelo do ODO: **arco e flecha** vêm como ataques separados, e armas também são listadas no equipamento (para contar a carga).
+
 ## Statblock de monstro: bloco `od2-monstro`
 
 Bloco para criaturas, com botões de ataque/dano e de rolar PV pelos Dados de Vida.
