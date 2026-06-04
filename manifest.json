@@ -1,9 +1,9 @@
 {
   "id": "old-dragon-toolkit",
   "name": "Old Dragon 2 Toolkit",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "minAppVersion": "1.5.0",
-  "description": "Fichas interativas, rolagens e compêndio do SRD para o sistema de RPG Old Dragon 2",
+  "description": "Fichas interativas, rolagens e compêndio do SRD para o sistema de RPG Old Dragon 2.",
   "author": "Maicon-Lara",
   "authorUrl": "https://github.com/Maicon-Lara",
   "isDesktopOnly": false
