@@ -86,6 +86,37 @@ button.od2-del:hover { color: #fff; background: #c0392b; border-color: #c0392b; 
   padding-bottom: 0.2rem;
 }
 
+/* Seções do meio ficam lado a lado em 2 colunas (flex), pra encurtar a ficha.
+   Cada seção é uma unidade inteira dentro de uma coluna — nunca fragmentada —,
+   então não há vazamento de conteúdo entre colunas. O JS equilibra a altura. */
+.od2-cols {
+  display: flex;
+  gap: 1.4rem;
+  align-items: flex-start;
+  margin-top: 0.5rem;
+}
+.od2-col { flex: 1 1 0; min-width: 0; }
+.od2-col > .od2-section:first-child { margin-top: 0; }
+@media (max-width: 700px) {
+  .od2-cols { flex-direction: column; gap: 0; }
+}
+
+/* Campo de notas (largura total, abaixo das colunas) */
+.od2-notas-input {
+  width: 100%;
+  min-height: 4.5rem;
+  resize: vertical;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: inherit;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+.od2-notas-input:focus { border-color: var(--interactive-accent); outline: none; }
+
 .od2-stats { display: flex; flex-wrap: wrap; gap: 0.8rem; }
 .od2-stat {
   display: flex; flex-direction: column; align-items: center;
@@ -97,7 +128,13 @@ button.od2-del:hover { color: #fff; background: #c0392b; border-color: #c0392b; 
 
 .od2-btn-row { display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap; }
 .od2-atk, .od2-jp, .od2-pv-line { display: flex; align-items: center; gap: 0.6rem; margin: 0.3rem 0; }
-.od2-atk-name, .od2-jp-label { min-width: 140px; }
+/* Em colunas estreitas: o nome ocupa o espaço livre e encolhe (quebrando o texto
+   se preciso); os botões podem descer juntos pra linha de baixo em vez de vazar. */
+.od2-atk { flex-wrap: wrap; }
+.od2-atk-name { flex: 1 1 8rem; min-width: 0; overflow-wrap: anywhere; }
+.od2-jp-label { flex: 1 1 8rem; min-width: 0; }
+/* Dentro da linha, a "carga" não deve empurrar pra baixo (zera o margin do od2-calc). */
+.od2-atk .od2-calc { margin-top: 0; flex: 0 0 auto; }
 .od2-jp-val { color: var(--text-muted); }
 .od2-pv-val { font-size: 1.2em; font-weight: 700; min-width: 80px; text-align: center; }
 

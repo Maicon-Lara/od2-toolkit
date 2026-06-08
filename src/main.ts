@@ -571,8 +571,15 @@ export default class OD2Plugin extends Plugin {
       btn.onclick = () => this.rolarRollUnder(20, v + ajuste, label);
     }
 
+    // A partir daqui as seções ficam lado a lado em 2 colunas, pra encurtar a ficha.
+    // Cabeçalho, atributos e Notas ficam fora (largura total). As seções são criadas
+    // todas em colL; um balanceador (no fim) move parte pra colR equilibrando a altura.
+    const cols = root.createDiv({ cls: "od2-cols" });
+    const colL = cols.createDiv({ cls: "od2-col" });
+    const colR = cols.createDiv({ cls: "od2-col" });
+
     // --- Combate ---
-    const comb = root.createDiv({ cls: "od2-section" });
+    const comb = colL.createDiv({ cls: "od2-section" });
     const combHead = comb.createDiv({ cls: "od2-sec-head" });
     combHead.createEl("h3", { text: "Combate" });
     const autoDesloc = num(rb.deslocamento ?? povoDef?.deslocamento, 9);
@@ -651,7 +658,7 @@ export default class OD2Plugin extends Plugin {
 
     // --- Ataques listados (com adicionar/editar/remover) ---
     {
-      const sec = root.createDiv({ cls: "od2-section" });
+      const sec = colL.createDiv({ cls: "od2-section" });
       const sh = sec.createDiv({ cls: "od2-sec-head" });
       sh.createEl("h3", { text: "Ataques" });
       const addBtn = sh.createEl("button", { cls: "od2-roll od2-add", text: "+ ataque" });
@@ -712,7 +719,7 @@ export default class OD2Plugin extends Plugin {
     }
 
     // --- Jogadas de Proteção ---
-    const jp = root.createDiv({ cls: "od2-section" });
+    const jp = colL.createDiv({ cls: "od2-section" });
     const jpHead = jp.createDiv({ cls: "od2-sec-head" });
     jpHead.createEl("h3", { text: "Jogadas de Proteção" });
     this.editBtn(
@@ -761,7 +768,7 @@ export default class OD2Plugin extends Plugin {
             : undefined;
       const semExtra = classeDef?.magias_sem_extra_atributo === true;
       const extras = magicAttr != null && !semExtra ? magiasExtras(magicAttr) : [0, 0, 0];
-      const sec = root.createDiv({ cls: "od2-section od2-magias-sec" });
+      const sec = colL.createDiv({ cls: "od2-section od2-magias-sec" });
       sec.createEl("h3", { text: "Magias por dia" });
       magiasNivel.forEach((qtd, i) => {
         if (qtd <= 0) return;
@@ -825,7 +832,7 @@ export default class OD2Plugin extends Plugin {
     };
 
     if (poderesPovo.length || poderesClasse.length || poderesHerdados.length) {
-      const sec = root.createDiv({ cls: "od2-section od2-poderes" });
+      const sec = colL.createDiv({ cls: "od2-section od2-poderes" });
       sec.createEl("h3", { text: "Poderes" });
       if (poderesPovo.length) {
         sec.createEl("h4", { text: `Povo — ${povoDef?.nome ?? d.povo}` });
@@ -847,7 +854,7 @@ export default class OD2Plugin extends Plugin {
         for (const p of poderesHerdados) renderPoder(ul, p);
       }
     } else if (d.povo || d.classe) {
-      root
+      colL
         .createDiv({ cls: "od2-section" })
         .createDiv({
           cls: "od2-calc",
@@ -871,7 +878,7 @@ export default class OD2Plugin extends Plugin {
         d.talentos_pontos && typeof d.talentos_pontos === "object"
           ? (d.talentos_pontos as Record<string, number>)
           : {};
-      const sec = root.createDiv({ cls: "od2-section od2-talentos" });
+      const sec = colL.createDiv({ cls: "od2-section od2-talentos" });
       sec.createEl("h3", { text: "Talentos" });
       let usados = 0;
       for (const t of talentos) {
@@ -904,7 +911,7 @@ export default class OD2Plugin extends Plugin {
 
     // --- Equipamento e Carga (com adicionar/editar/remover) ---
     {
-      const sec = root.createDiv({ cls: "od2-section" });
+      const sec = colL.createDiv({ cls: "od2-section" });
       const sh = sec.createDiv({ cls: "od2-sec-head" });
       sh.createEl("h3", { text: "Equipamento e Carga" });
       const addBtn = sh.createEl("button", { cls: "od2-roll od2-add", text: "+ item" });
@@ -963,7 +970,7 @@ export default class OD2Plugin extends Plugin {
     }
 
     // --- Pontos de Vida (grava no arquivo) ---
-    const pvSec = root.createDiv({ cls: "od2-section od2-pv" });
+    const pvSec = colL.createDiv({ cls: "od2-section od2-pv" });
     pvSec.createEl("h3", { text: "Pontos de Vida" });
     const pvLine = pvSec.createDiv({ cls: "od2-pv-line" });
     const maxv = num(d.pv_max);
@@ -998,6 +1005,41 @@ export default class OD2Plugin extends Plugin {
         showResult(`PV (nível ${nivel}, d${hd} ${sinal(conMod)}/nível): <b>${total}</b> [${rolls.join(", ")}]`);
       };
     }
+
+    // --- Notas (texto livre, gravado no YAML; largura total, fora das colunas) ---
+    const notasSec = root.createDiv({ cls: "od2-section od2-notas" });
+    notasSec.createEl("h3", { text: "Notas" });
+    const notasArea = notasSec.createEl("textarea", {
+      cls: "od2-notas-input",
+      attr: {
+        rows: "4",
+        placeholder: "Anotações livres: ganchos, segredos, relações, lembretes…",
+      },
+    });
+    notasArea.value = typeof d.notas === "string" ? d.notas : "";
+    // Salva ao sair do campo (igual aos espaços de magia/talentos).
+    notasArea.addEventListener("change", () =>
+      this.rewriteFicha(ctx, el, (data) => setStrField(data, "notas", notasArea.value)),
+    );
+
+    // Balanceia as duas colunas por altura: cada seção é movida inteira (nunca
+    // fragmentada), então não há vazamento de botões entre colunas. As colunas
+    // já têm 50% de largura (flex), então a medição reflete a largura final.
+    // Em telas estreitas o CSS empilha as colunas; aí não movemos nada.
+    requestAnimationFrame(() => {
+      if (cols.offsetWidth < 560) return; // empilhado (mobile) → coluna única
+      const secoes = Array.from(colL.children) as HTMLElement[];
+      const alturas = secoes.map((s) => s.offsetHeight);
+      const total = alturas.reduce((a, h) => a + h, 0);
+      if (total === 0) return; // ainda não renderizado → mantém coluna única
+      let acc = 0;
+      secoes.forEach((s, i) => {
+        // Tudo que começa depois da metade da altura vai pra coluna direita,
+        // preservando a ordem de leitura (esquerda em cima, direita embaixo).
+        if (acc >= total / 2) colR.appendChild(s);
+        acc += alturas[i];
+      });
+    });
   }
 
   // Resolve um retrato: wikilink [[arquivo]], caminho do vault ou URL → src utilizável.

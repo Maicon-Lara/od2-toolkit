@@ -40,6 +40,8 @@ export interface FichaData {
   mochila?: boolean;
   // Pontos gastos por talento (ex.: {"Furtividade": 4, "Arrombar": 3}).
   talentos_pontos?: Record<string, number>;
+  // Anotações livres do jogador/mestre (ganchos, segredos, relações, lembretes).
+  notas?: string;
 }
 
 // Bônus mecânicos fixos (somados aos cálculos da ficha).
