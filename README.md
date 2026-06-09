@@ -129,19 +129,26 @@ Detecta automaticamente outros plugins instalados e coopera com eles; se não es
 
 ## Instalação
 
-> O plugin ainda **não está na loja oficial** do Obsidian, então use um dos
-> caminhos abaixo. Em ambos, é preciso ter os **Plugins da comunidade** habilitados
-> (Obsidian pode pedir para desativar o "Modo restrito"/Safe Mode na primeira vez).
+> É preciso ter os **Plugins da comunidade** habilitados (na primeira vez o
+> Obsidian pode pedir para desativar o "Modo restrito"/Safe Mode).
 
-### Via BRAT — recomendado (atualiza sozinho)
+### Pela loja oficial — recomendado
 
-O [BRAT](https://github.com/TfTHacker/obsidian42-brat) instala plugins direto do
-GitHub e mantém a versão atualizada a cada nova release.
+O plugin já está na **loja de plugins da comunidade** do Obsidian:
 
-1. Em **Configurações → Plugins da comunidade → Procurar**, instale **"BRAT"**
-   (Obsidian42 - BRAT) e ative-o.
-2. Abra a paleta de comandos (**Ctrl/Cmd + P**) e rode
-   **"BRAT: Add a beta plugin for testing"**.
+1. **Configurações → Plugins da comunidade → Procurar**.
+2. Busque por **"Old Dragon 2"** e clique em **Instalar**.
+3. Ative o **Old Dragon 2 Toolkit**.
+
+As atualizações chegam automaticamente pelo próprio Obsidian.
+
+### Via BRAT — versões beta (antes de chegarem à loja)
+
+O [BRAT](https://github.com/TfTHacker/obsidian42-brat) instala direto do GitHub e
+acompanha cada release, útil para testar novidades antes da publicação na loja.
+
+1. Instale e ative o **"BRAT"** (Obsidian42 - BRAT) pela busca de plugins da comunidade.
+2. Paleta de comandos (**Ctrl/Cmd + P**) → **"BRAT: Add a beta plugin for testing"**.
 3. Informe o repositório:
    ```
    Maicon-Lara/od2-toolkit
@@ -157,11 +164,6 @@ GitHub e mantém a versão atualizada a cada nova release.
    para dentro dela.
 3. Reabra o Obsidian (ou *Recarregar plugins*) e ative o **Old Dragon 2 Toolkit**
    em **Plugins da comunidade**.
-
-### Pela loja oficial (futuro)
-
-Quando aprovado, bastará **Configurações → Plugins da comunidade → Procurar →
-"Old Dragon 2"** e clicar em *Instalar*.
 
 ## Desenvolvimento
 
