@@ -43,6 +43,7 @@ import {
   notaPovo,
 } from "./compendio";
 import { avaliarAtaque, avaliarTeste, rollDie, rollExpr } from "./roller";
+import { INSTRUCOES_FS, OD2_LAYOUT, monstroParaFS } from "./fantasy-statblocks";
 
 interface OD2Settings {
   mostrarCalculo: boolean;
@@ -394,6 +395,12 @@ export default class OD2Plugin extends Plugin {
       id: "gerar-compendio-od2",
       name: "Gerar compêndio OD2 (SRD)",
       callback: () => this.gerarCompendio(),
+    });
+
+    this.addCommand({
+      id: "exportar-fantasy-statblocks",
+      name: "Exportar bestiário para Fantasy Statblocks (JSON)",
+      callback: () => this.exportarFantasyStatblocks(),
     });
 
     this.addSettingTab(new OD2SettingTab(this.app, this));
@@ -1375,6 +1382,40 @@ export default class OD2Plugin extends Plugin {
       );
     } catch (e) {
       new Notice("OD2: erro ao gerar o compêndio — " + (e as Error).message);
+    }
+  }
+
+  // Escreve um arquivo qualquer (ex.: .json), criando ou sobrescrevendo.
+  private async writeRaw(path: string, content: string): Promise<void> {
+    const norm = normalizePath(path);
+    const existing = this.app.vault.getAbstractFileByPath(norm);
+    if (existing instanceof TFile) await this.app.vault.modify(existing, content);
+    else await this.app.vault.create(norm, content);
+  }
+
+  // Exporta o bestiário (SRD) para o Fantasy Statblocks: array de criaturas
+  // (import "Generic JSON") + o Layout "Old Dragon 2" + uma nota com o passo a passo.
+  private async exportarFantasyStatblocks() {
+    const base = normalizePath((this.settings.pastaCompendio || "Compêndio OD2").trim());
+    const dir = `${base}/Fantasy Statblocks`;
+    try {
+      await this.ensureFolder(dir);
+      const monstros = [...BESTIARIO, ...HUMANOIDES].map(monstroParaFS);
+      await this.writeRaw(
+        `${dir}/Bestiário OD2 (import Generic JSON).json`,
+        JSON.stringify(monstros, null, 2),
+      );
+      await this.writeRaw(
+        `${dir}/Layout Old Dragon 2 (import Layout).json`,
+        JSON.stringify(OD2_LAYOUT, null, 2),
+      );
+      await this.writeRaw(`${dir}/Como importar no Fantasy Statblocks.md`, INSTRUCOES_FS);
+      new Notice(
+        `OD2: ${monstros.length} criaturas exportadas para “${dir}”. ` +
+          "Veja a nota “Como importar no Fantasy Statblocks”.",
+      );
+    } catch (e) {
+      new Notice("OD2: erro ao exportar para o Fantasy Statblocks — " + (e as Error).message);
     }
   }
 

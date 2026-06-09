@@ -99,6 +99,23 @@ A pasta de destino é configurável (padrão: `Compêndio OD2`). O comando é **
 ao regenerar, atualiza as notas marcadas com `od2_compendio: true` e **preserva**
 qualquer nota sua de mesmo nome.
 
+## Exportar o bestiário para o Fantasy Statblocks
+
+Comando **"Exportar bestiário para Fantasy Statblocks (JSON)"** gera, dentro da pasta
+do compêndio (`<pasta>/Fantasy Statblocks/`), o que o
+[Fantasy Statblocks](https://github.com/javalent/fantasy-statblocks) precisa para
+mostrar as ~250 criaturas do SRD com a aparência do OD2:
+
+- `Bestiário OD2 (import Generic JSON).json` — todas as criaturas no formato do FS;
+- `Layout Old Dragon 2 (import Layout).json` — layout que exibe CA, PV, DV, JP, Moral, XP, Encontro e Tesouro;
+- `Como importar no Fantasy Statblocks.md` — passo a passo.
+
+Importe **primeiro o layout** (Configurações → Fantasy Statblocks → *Layouts* → Import)
+e depois as criaturas (seção de import → *Generic JSON*). Como a API do Fantasy
+Statblocks é somente leitura, a ponte é por arquivo — reexecutar o comando regenera
+os JSON e basta reimportar. Depois disso as criaturas aparecem na busca do FS, no
+Initiative Tracker e no construtor de encontros.
+
 ## Integrações (opcionais)
 
 Detecta automaticamente outros plugins instalados e coopera com eles; se não estiverem presentes, o comportamento padrão é mantido.
