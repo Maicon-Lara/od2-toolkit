@@ -48,8 +48,12 @@ A ficha renderizada calcula automaticamente:
 
 E oferece **botões de rolagem**:
 - Teste de atributo e JP — *roll-under* (1d20 ≤ alvo; 1 sempre sucesso, 20 sempre falha);
-- Ataque (1d20 + bônus) e dano;
+- Ataque (1d20 + bônus) e dano (aceita dano composto, ex.: `2d6+1d4`);
+- **Iniciativa** (LB1 p.81) — *roll-under* 1d20 ≤ maior entre DES e SAB; informa se você age **antes** ou **depois** dos inimigos;
 - Contador de **PV** com − / + que grava de volta no arquivo.
+
+O seletor **Ajuste** (Fácil/Difícil) aplica-se também à iniciativa. Os espaços de
+**magia preparada** têm autocomplete com os nomes do SRD (arcanas/divinas conforme a classe).
 
 ### Edição sem mexer no YAML
 - **Retrato:** campo `retrato: "[[arquivo.png]]"` (wikilink, caminho do vault ou URL) exibe a imagem no topo da ficha.

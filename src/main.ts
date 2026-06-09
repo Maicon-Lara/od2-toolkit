@@ -647,11 +647,28 @@ export default class OD2Plugin extends Plugin {
     mkAtk("Corpo a corpo", ac);
     mkAtk("À distância", ad);
 
-    if (this.temInitiativeTracker()) {
-      const itBtn = atkRow.createEl("button", { cls: "od2-roll od2-it", text: "⚔️ + Initiative Tracker" });
-      itBtn.onclick = () =>
-        this.adicionarAoTracker(d.nome || "Personagem", num(d.pv_atual, num(d.pv_max)), ca, mod(d.destreza));
-    }
+    // Iniciativa (OD2, LB1 p.81): teste roll-under 1d20 ≤ MAIOR entre DES e SAB.
+    // Botão único: sempre rola e informa antes/depois; se o Initiative Tracker estiver
+    // instalado, já adiciona o PC na faixa correta (sucesso 20 / falha 1).
+    const atribIniciativa = Math.max(num(d.destreza, 10), num(d.sabedoria, 10));
+    const temIT = this.temInitiativeTracker();
+    const iniBtn = atkRow.createEl("button", {
+      cls: "od2-roll od2-ini",
+      text: temIT ? "⚔️ Iniciativa" : "Iniciativa",
+    });
+    iniBtn.onclick = () =>
+      this.rolarIniciativa(
+        atribIniciativa + ajuste,
+        temIT
+          ? {
+              nome: d.nome || "Personagem",
+              hp: num(d.pv_atual, num(d.pv_max)),
+              ca,
+              // No OD2 o atributo de iniciativa é o maior entre DES e SAB.
+              mod: Math.max(mod(d.destreza), mod(d.sabedoria)),
+            }
+          : undefined,
+      );
 
     if (this.settings.mostrarCalculo) {
       const fonte = classeDef ? ` · BA/JP de ${classeDef.nome} (nível ${nivel})` : "";
@@ -1140,7 +1157,8 @@ export default class OD2Plugin extends Plugin {
 
     if (this.temInitiativeTracker()) {
       const itBtn = root.createEl("button", { cls: "od2-roll od2-it", text: "⚔️ + Initiative Tracker" });
-      itBtn.onclick = () => this.adicionarAoTracker(m.nome || "Criatura", num(m.pv), m.ca ?? 10, 0);
+      // Monstros agem entre os PCs que passaram (20) e os que falharam (1) → faixa 10.
+      itBtn.onclick = () => this.adicionarAoTracker(m.nome || "Criatura", num(m.pv), m.ca ?? 10, 0, 10);
     }
 
     if (Array.isArray(m.ataques) && m.ataques.length) {
@@ -1428,7 +1446,16 @@ export default class OD2Plugin extends Plugin {
   }
 
   // Adiciona uma criatura/PJ ao Initiative Tracker (nome, PV, CA, modificador de iniciativa).
-  private adicionarAoTracker(nome: string, hp: number, ca: number | string, modifier: number) {
+  // `initiativeFixa` (opcional): grava a iniciativa diretamente como estática — o IT
+  // pula a re-rolagem de criaturas com `static && initiative`, preservando a ordem do
+  // OD2 (sucessos 20 → monstros 10 → falhas 1).
+  private adicionarAoTracker(
+    nome: string,
+    hp: number,
+    ca: number | string,
+    modifier: number,
+    initiativeFixa?: number,
+  ) {
     const it = (this.app as any).plugins?.getPlugin?.("initiative-tracker");
     if (!it?.api?.addCreatures) {
       new Notice("Initiative Tracker não está disponível.");
@@ -1436,9 +1463,17 @@ export default class OD2Plugin extends Plugin {
     }
     try {
       const acNum = typeof ca === "number" ? ca : parseInt(String(ca), 10) || 10;
-      it.api.addCreatures([
-        { name: nome || "Criatura", hp: Number(hp) || 0, ac: acNum, modifier: Number(modifier) || 0 },
-      ]);
+      const creature: Record<string, unknown> = {
+        name: nome || "Criatura",
+        hp: Number(hp) || 0,
+        ac: acNum,
+        modifier: Number(modifier) || 0,
+      };
+      if (initiativeFixa != null) {
+        creature.initiative = initiativeFixa; // lido direto pelo Creature do IT
+        creature.static = true; // impede o IT de re-rolar por cima
+      }
+      it.api.addCreatures([creature]);
       new Notice(`${nome} adicionado ao Initiative Tracker.`);
     } catch (e) {
       new Notice("OD2: falha ao adicionar ao Initiative Tracker — " + (e as Error).message);
@@ -1487,6 +1522,27 @@ export default class OD2Plugin extends Plugin {
     this.mostrarResultado(
       `1d${lados}`,
       `${label} — 1d${lados} = ${v} (≤ ${alvo}) → ${r.sucesso ? "✅ sucesso" : "❌ falha"}${crit}`,
+    );
+  }
+
+  // Iniciativa (OD2): teste roll-under 1d20 ≤ maior(DES, SAB). Sucesso = age antes
+  // dos inimigos; falha = age depois. 1 sempre sucesso, 20 sempre falha.
+  // Se `tracker` vier, adiciona o PC ao Initiative Tracker na faixa do resultado.
+  private rolarIniciativa(
+    alvo: number,
+    tracker?: { nome: string; hp: number; ca: number | string; mod: number },
+  ) {
+    const v = rollDie(20);
+    const r = avaliarTeste(v, alvo);
+    if (tracker) {
+      const banda = r.sucesso ? 20 : 1; // sucesso age antes dos monstros (10); falha depois
+      this.adicionarAoTracker(tracker.nome, tracker.hp, tracker.ca, tracker.mod, banda);
+    }
+    const crit = r.critico ? ` (${r.critico} crítico)` : "";
+    const ordem = r.sucesso ? "age ANTES dos inimigos" : "age DEPOIS dos inimigos";
+    this.mostrarResultado(
+      "1d20",
+      `Iniciativa — 1d20 = ${v} (≤ ${alvo}) → ${r.sucesso ? "✅" : "❌"} ${ordem}${tracker ? " · no Tracker" : ""}${crit}`,
     );
   }
 
