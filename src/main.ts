@@ -794,6 +794,8 @@ export default class OD2Plugin extends Plugin {
       const extras = magicAttr != null && !semExtra ? magiasExtras(magicAttr) : [0, 0, 0];
       const sec = colL.createDiv({ cls: "od2-section od2-magias-sec" });
       sec.createEl("h3", { text: "Magias por dia" });
+      // Sufixo único por ficha pra não colidir ids de <datalist> entre fichas abertas.
+      const uid = Math.random().toString(36).slice(2, 8);
       magiasNivel.forEach((qtd, i) => {
         if (qtd <= 0) return;
         const circ = i + 1;
@@ -804,11 +806,18 @@ export default class OD2Plugin extends Plugin {
           cls: "od2-magia-circ-titulo",
           text: `${circ}º círculo — ${total} espaço(s)` + (extra ? ` (${qtd} + ${extra} por atributo)` : ""),
         });
+        // Autocomplete: sugere as magias do SRD daquele círculo (filtradas por tipo da classe).
+        const listId = `od2-magia-${uid}-c${circ}`;
+        const datalist = block.createEl("datalist");
+        datalist.id = listId;
+        for (const nome of this.nomesDeMagia(classeDef, circ)) {
+          datalist.createEl("option", { attr: { value: nome } });
+        }
         const salvas = Array.isArray(prep[String(circ)]) ? prep[String(circ)] : [];
         for (let j = 0; j < total; j++) {
           const inp = block.createEl("input", {
             cls: "od2-magia-input",
-            attr: { type: "text", placeholder: `${circ}º círculo — espaço ${j + 1}` },
+            attr: { type: "text", list: listId, placeholder: `${circ}º círculo — espaço ${j + 1}` },
           });
           inp.value = salvas[j] ?? "";
           inp.dataset.circ = String(circ);
@@ -1081,6 +1090,25 @@ export default class OD2Plugin extends Plugin {
     await this.rewriteFicha(ctx, el, (d) => {
       d.pv_atual = num(d.pv_atual, num(d.pv_max)) + delta;
     });
+  }
+
+  // Nomes de magia do SRD para autocomplete, por círculo e filtrados pelo tipo da
+  // classe: Mago → arcanas (+ exclusivas da especialização); Clérigo → divinas;
+  // classe desconhecida/autoral → arcanas + divinas. Ordenado e sem repetição.
+  private nomesDeMagia(classeDef: ClasseDef | undefined, circ: number): string[] {
+    const arc = MAGIAS_ARCANAS[circ - 1]?.map((m) => m.nome) ?? [];
+    const div = MAGIAS_DIVINAS[circ - 1]?.map((m) => m.nome) ?? [];
+    const base = norm(classeDef?.base);
+    let nomes: string[];
+    if (base === "mago") {
+      const exc = MAGIAS_EXCLUSIVAS.find((e) => norm(e.classe) === norm(classeDef?.nome))?.magias ?? [];
+      nomes = [...arc, ...exc];
+    } else if (base === "clérigo") {
+      nomes = div;
+    } else {
+      nomes = [...arc, ...div];
+    }
+    return Array.from(new Set(nomes)).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
   // Coleta os nomes digitados nas magias e grava no bloco.
