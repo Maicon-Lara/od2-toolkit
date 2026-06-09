@@ -61,8 +61,9 @@ export function num(x: unknown, def = 0): number {
 }
 
 // Tabela 1.1 — modificador por valor de atributo (Old Dragon 2).
+// Atributo ausente/não-numérico vira 10 (média, mod 0) em vez de 0 → −3 fantasma.
 export function mod(v: unknown): number {
-  const n = num(v);
+  const n = num(v, 10);
   if (n <= 3) return -3;
   if (n <= 5) return -2;
   if (n <= 8) return -1;

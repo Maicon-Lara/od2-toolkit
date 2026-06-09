@@ -9,24 +9,43 @@ export interface RollResult {
   rolls: number[];
   bonus: number;
   expr: string;
+  ok: boolean; // false quando a expressão não pôde ser interpretada
 }
 
-// Avalia expressões "2d6+3", "1d20-1", "1d8" ou um número fixo "3".
+// Avalia uma soma de termos: cada termo é uma rolagem "XdY" ou um número fixo,
+// com sinais. Aceita compostos como "2d6+1d4", "1d8+2", "1d6-1" e "3".
+// `ok=false` quando a string tem algo que não casa (ex.: "1d6/1d6") — assim o
+// chamador avisa em vez de devolver 0 silenciosamente.
 export function rollExpr(expr: string): RollResult {
   const clean = String(expr).replace(/\s+/g, "");
-  const m = clean.match(/^(\d*)d(\d+)([+-]\d+)?$/i);
-  if (!m) {
-    const flat = Number(clean);
-    const v = Number.isFinite(flat) ? flat : 0;
-    return { total: v, rolls: [], bonus: v, expr: clean };
-  }
-  const count = m[1] ? parseInt(m[1], 10) : 1;
-  const sides = parseInt(m[2], 10);
-  const bonus = m[3] ? parseInt(m[3], 10) : 0;
+  const termRe = /([+-]?)(\d*d\d+|\d+)/gi;
   const rolls: number[] = [];
-  for (let i = 0; i < count; i++) rolls.push(rollDie(sides));
-  const total = rolls.reduce((a, b) => a + b, 0) + bonus;
-  return { total, rolls, bonus, expr: clean };
+  let total = 0;
+  let bonus = 0;
+  let matched = false;
+  let m: RegExpExecArray | null;
+  while ((m = termRe.exec(clean)) !== null) {
+    matched = true;
+    const sign = m[1] === "-" ? -1 : 1;
+    const dice = m[2].match(/^(\d*)d(\d+)$/i);
+    if (dice) {
+      const count = dice[1] ? parseInt(dice[1], 10) : 1;
+      const sides = parseInt(dice[2], 10);
+      for (let i = 0; i < count; i++) {
+        const r = rollDie(sides);
+        rolls.push(r); // faces roladas (positivas); o sinal entra só no total
+        total += sign * r;
+      }
+    } else {
+      const flat = parseInt(m[2], 10);
+      bonus += sign * flat;
+      total += sign * flat;
+    }
+  }
+  // A expressão precisa ser inteiramente consumida pelos termos; sobra = inválida.
+  const ok = matched && clean.replace(termRe, "") === "";
+  if (!ok) return { total: 0, rolls: [], bonus: 0, expr: clean, ok: false };
+  return { total, rolls, bonus, expr: clean, ok: true };
 }
 
 // Teste roll-under do OD2: 1d20 ≤ alvo. 1 sempre sucesso, 20 sempre falha.

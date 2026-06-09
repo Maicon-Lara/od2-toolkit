@@ -1240,22 +1240,37 @@ export default class OD2Plugin extends Plugin {
       new Notice("OD2: bloco da ficha não localizado.");
       return;
     }
-    const content = await this.app.vault.read(file);
-    const lines = content.split("\n");
-    // info.lineStart/lineEnd apontam para as cercas ```; o corpo fica entre elas.
-    const bodyStart = info.lineStart + 1;
-    const body = lines.slice(bodyStart, info.lineEnd).join("\n");
-    let data: FichaData;
-    try {
-      data = (parseYaml(body) as FichaData) ?? {};
-    } catch (e) {
-      new Notice("OD2: não consegui ler o YAML da ficha para editar.");
-      return;
-    }
-    mutate(data);
-    const newBody = stringifyYaml(data).replace(/\n+$/, "");
-    lines.splice(bodyStart, info.lineEnd - bodyStart, ...newBody.split("\n"));
-    await this.app.vault.modify(file, lines.join("\n"));
+    // vault.process: read-modify-write atômico e serializado. Sem ele, edições
+    // disparadas em sequência (ex.: cliques rápidos em PV −/+) leem o arquivo
+    // antes da escrita anterior terminar e uma delas se perde.
+    let erro: string | null = null;
+    await this.app.vault.process(file, (content) => {
+      const lines = content.split("\n");
+      // info.lineStart aponta para a cerca de abertura; o corpo vem logo depois.
+      const bodyStart = info.lineStart + 1;
+      // A cerca de fechamento pode ter "andado" se uma edição anterior na fila
+      // mudou o tamanho do bloco; reencontramos a ``` em vez de confiar no lineEnd.
+      let bodyEnd = info.lineEnd;
+      for (let i = bodyStart; i < lines.length; i++) {
+        if (/^\s*(```|~~~)/.test(lines[i])) {
+          bodyEnd = i;
+          break;
+        }
+      }
+      const body = lines.slice(bodyStart, bodyEnd).join("\n");
+      let data: FichaData;
+      try {
+        data = (parseYaml(body) as FichaData) ?? {};
+      } catch {
+        erro = "OD2: não consegui ler o YAML da ficha para editar.";
+        return content; // mantém o arquivo intacto
+      }
+      mutate(data);
+      const newBody = stringifyYaml(data).replace(/\n+$/, "");
+      lines.splice(bodyStart, bodyEnd - bodyStart, ...newBody.split("\n"));
+      return lines.join("\n");
+    });
+    if (erro) new Notice(erro);
   }
 
   // Cria a pasta se ainda não existir (cria também os pais, na ordem).
@@ -1446,6 +1461,13 @@ export default class OD2Plugin extends Plugin {
 
   private rolarDano(label: string, dano: string) {
     const r = rollExpr(String(dano));
+    if (!r.ok) {
+      this.mostrarResultado(
+        String(dano),
+        `${label} — não entendi o dano “${dano}”. Use algo como 1d8+2 ou 2d6+1d4.`,
+      );
+      return;
+    }
     this.mostrarResultado(
       String(dano),
       `${label} — dano ${dano} = ${r.total}` + (r.rolls.length ? ` [${r.rolls.join(", ")}]` : ""),
