@@ -169,6 +169,7 @@ Quando aprovado, bastará **Configurações → Plugins da comunidade → Procur
 npm install
 npm run dev     # build em watch
 npm run build   # build de produção (gera main.js)
+npm test        # testes do motor de regras (vitest)
 ```
 
 Para testar localmente, copie `main.js`, `manifest.json` e `styles.css` para
