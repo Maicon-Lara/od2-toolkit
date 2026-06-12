@@ -122,7 +122,7 @@ Comando: **"Inserir statblock de monstro (OD2)"**.
 
 Qualquer nota do vault com o frontmatter `od2-classe:` ou `od2-povo:` é indexada automaticamente e passa a valer nas fichas — basta usar o mesmo nome em `classe:` / `povo:`. Uma definição homebrew com o nome de uma classe/povo do SRD **sobrescreve** a embutida.
 
-Os comandos **"Inserir definição de classe homebrew (OD2)"** e **"Inserir definição de povo homebrew (OD2)"** colam um template comentado — use em uma **nota nova** (o frontmatter precisa ficar no topo).
+Os comandos **"Nova classe homebrew (OD2)"** e **"Novo povo homebrew (OD2)"** criam uma nota nova já com um template comentado (o frontmatter precisa ficar no topo da nota, então o comando cria o arquivo em vez de inserir no cursor).
 
 Exemplo de classe:
 

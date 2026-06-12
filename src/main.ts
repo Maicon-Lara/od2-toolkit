@@ -138,7 +138,7 @@ function odoParaFicha(j: OdoChar): FichaData {
   const modCon = mod(j.constituicao);
   const modSab = mod(j.sabedoria);
 
-  const itens: OdoItem[] = j.inventory_items ?? [];
+  const itens: OdoItem[] = Array.isArray(j.inventory_items) ? j.inventory_items : [];
   const equipados = itens.filter((it) => it.equipped);
   const somaCa = (concept: string) =>
     equipados.filter((it) => it.concept === concept).reduce((a, it) => a + num(it.bonus_ca), 0);
@@ -457,7 +457,7 @@ function rolarPVdeDV(dv: string | number): { total: number; rolls: number[] } {
 
 // Tipagem mínima de APIs de terceiros não cobertas pela API pública do Obsidian.
 interface AppWithPlugins extends App {
-  plugins: { getPlugin(id: string): unknown };
+  plugins?: { getPlugin?(id: string): unknown };
 }
 interface InitiativeTrackerPlugin {
   api?: { addCreatures(creatures: Record<string, unknown>[]): void };
@@ -513,14 +513,14 @@ export default class OD2Plugin extends Plugin {
 
     this.addCommand({
       id: "inserir-classe-homebrew-od2",
-      name: "Inserir definição de classe homebrew (OD2)",
-      editorCallback: (editor) => editor.replaceSelection(SKELETON_CLASSE),
+      name: "Nova classe homebrew (OD2)",
+      callback: () => void this.criarNotaHomebrew("Classe homebrew", SKELETON_CLASSE),
     });
 
     this.addCommand({
       id: "inserir-povo-homebrew-od2",
-      name: "Inserir definição de povo homebrew (OD2)",
-      editorCallback: (editor) => editor.replaceSelection(SKELETON_POVO),
+      name: "Novo povo homebrew (OD2)",
+      callback: () => void this.criarNotaHomebrew("Povo homebrew", SKELETON_POVO),
     });
 
     this.addCommand({
@@ -579,9 +579,27 @@ export default class OD2Plugin extends Plugin {
     }
   }
 
+  // Cria uma NOTA NOVA com o template homebrew e a abre. O frontmatter (od2-classe/
+  // od2-povo) só é reconhecido pelo Obsidian no topo do arquivo, então criar a nota
+  // — em vez de inserir no cursor — garante que a definição seja indexada.
+  private async criarNotaHomebrew(nomeBase: string, conteudo: string) {
+    const ativo = this.app.workspace.getActiveFile();
+    const pasta = ativo?.parent?.path && ativo.parent.path !== "/" ? ativo.parent.path + "/" : "";
+    let caminho = normalizePath(`${pasta}${nomeBase}.md`);
+    for (let i = 2; this.app.vault.getAbstractFileByPath(caminho); i++) {
+      caminho = normalizePath(`${pasta}${nomeBase} ${i}.md`);
+    }
+    try {
+      const file = await this.app.vault.create(caminho, conteudo);
+      await this.app.workspace.getLeaf(true).openFile(file);
+    } catch (e) {
+      new Notice("OD2: não foi possível criar a nota — " + (e as Error).message);
+    }
+  }
+
   private renderFicha(el: HTMLElement, d: FichaData, ctx: MarkdownPostProcessorContext) {
     const root = el.createDiv({ cls: "od2-ficha" });
-    const nivel = num(d.nivel, 1);
+    const nivel = Math.max(1, num(d.nivel, 1));
     const classeDef = this.classes.get(norm(d.classe));
     const povoDef = this.povos.get(norm(d.povo));
     const rb = povoDef?.bonus ?? {};
@@ -1148,13 +1166,23 @@ export default class OD2Plugin extends Plugin {
       const sec = colL.createDiv({ cls: "od2-section" });
       const sh = sec.createDiv({ cls: "od2-sec-head" });
       sh.createEl("h3", { text: "Equipamento e Carga" });
+      // Lista de autocomplete e a regra de autopreenchimento de carga, computadas uma
+      // vez e reusadas por todos os modais de item (novo e editar).
+      const equipOptions = this.nomesDeEquipamento();
+      const autofillCarga = (key: string, value: string, set: (k: string, v: string) => void) => {
+        // Escolheu uma arma/armadura do SRD: preenche a carga automaticamente.
+        if (key === "nome") {
+          const carga = this.cargaDoItem(value);
+          if (carga != null) set("carga", String(carga));
+        }
+      };
       const addBtn = sh.createEl("button", { cls: "od2-roll od2-add", text: "+ item" });
       addBtn.onclick = () =>
         new OD2FormModal(
           this.app,
           "Novo item",
           [
-            { key: "nome", label: "Item", placeholder: "Corda (15 m)", options: this.nomesDeEquipamento() },
+            { key: "nome", label: "Item", placeholder: "Corda (15 m)", options: equipOptions },
             { key: "carga", label: "Carga", type: "number", value: 1 },
           ],
           (v) =>
@@ -1163,13 +1191,7 @@ export default class OD2Plugin extends Plugin {
               arr.push({ nome: v.nome || "Item", carga: num(v.carga) });
               data.equipamento = arr;
             }),
-          (key, value, set) => {
-            // Escolheu uma arma/armadura do SRD: preenche a carga automaticamente.
-            if (key === "nome") {
-              const carga = this.cargaDoItem(value);
-              if (carga != null) set("carga", String(carga));
-            }
-          },
+          autofillCarga,
         ).open();
 
       if (equip.length) {
@@ -1183,7 +1205,7 @@ export default class OD2Plugin extends Plugin {
               this.app,
               "Editar item",
               [
-                { key: "nome", label: "Item", value: it?.nome ?? "", options: this.nomesDeEquipamento() },
+                { key: "nome", label: "Item", value: it?.nome ?? "", options: equipOptions },
                 { key: "carga", label: "Carga", type: "number", value: num(it?.carga) },
               ],
               (v) =>
@@ -1192,12 +1214,7 @@ export default class OD2Plugin extends Plugin {
                     data.equipamento[i] = { nome: v.nome || "Item", carga: num(v.carga) };
                   }
                 }),
-              (key, value, set) => {
-                if (key === "nome") {
-                  const carga = this.cargaDoItem(value);
-                  if (carga != null) set("carga", String(carga));
-                }
-              },
+              autofillCarga,
             ).open();
           const del = row.createEl("button", { cls: "od2-mini od2-del", text: "✕", attr: { title: "Remover" } });
           del.onclick = () =>
@@ -1462,8 +1479,8 @@ export default class OD2Plugin extends Plugin {
     const url = `https://olddragon.com.br/personagens/${uuid}.json`;
     try {
       const resp = await requestUrl({ url });
-      const j = resp.json as OdoChar;
-      if (!j.name) {
+      const j = resp.json as OdoChar | null;
+      if (!j?.name) {
         new Notice("OD2: resposta inesperada do ODO — o personagem é público?");
         return null;
       }
@@ -1701,7 +1718,10 @@ export default class OD2Plugin extends Plugin {
 
   // Initiative Tracker disponível com a API de adicionar criaturas?
   private getPlugin(id: string): unknown {
-    return (this.app as AppWithPlugins).plugins.getPlugin(id);
+    // `plugins` é API interna (não tipada): mantém o optional-chaining defensivo —
+    // temInitiativeTracker() roda no render da ficha/statblock, então um throw aqui
+    // quebraria a renderização inteira.
+    return (this.app as AppWithPlugins).plugins?.getPlugin?.(id);
   }
 
   private temInitiativeTracker(): boolean {
@@ -1754,8 +1774,8 @@ export default class OD2Plugin extends Plugin {
   private adicionarResultadoNoTray(formula: string, result: string): boolean {
     const leaves = this.app.workspace.getLeavesOfType("DICE_ROLLER_VIEW");
     for (const leaf of leaves) {
-      const view = leaf.view as DiceRollerView;
-      if (typeof view.addResult === "function") {
+      const view = leaf.view as DiceRollerView | undefined;
+      if (view && typeof view.addResult === "function") {
         try {
           view.addResult({
             result,
