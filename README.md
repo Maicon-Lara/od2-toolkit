@@ -104,7 +104,7 @@ O cabeçalho mostra o **XP** e um botão **"+ XP"** que soma a experiência ganh
 Comando **"Importar personagem do ODO (Old Dragon Online)"**: cole o link (ou o ID) de uma ficha pública em [olddragon.com.br](https://olddragon.com.br) e o plugin baixa o personagem e insere um bloco `od2-ficha` preenchido no ponto do cursor.
 
 ```
-https://olddragon.com.br/personagens/5e0c675a-18d2-48f6-b1a4-fe2b18cac9b3
+https://olddragon.com.br/personagens/c1e96e80-2787-475e-8380-9b1dd1da5b7b
 ```
 
 São mapeados: atributos, PV, XP, PO, retrato, povo, classe, nível e alinhamento; CA, BA e Jogadas de Proteção (ajustados para exibir exatamente os valores do ODO); ataques (armas) e equipamento com carga (mochila inclusa). Observações:
