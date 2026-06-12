@@ -22,6 +22,8 @@ import {
   mod,
   num,
   sinal,
+  xpComBonusPovo,
+  xpDoNivel,
 } from "./od2";
 import { BASE_CLASSES, BASE_POVOS } from "./basedata";
 import { BESTIARIO } from "./srd/bestiario";
@@ -483,7 +485,55 @@ export default class OD2Plugin extends Plugin {
       .filter(Boolean)
       .join("  ·  ");
     if (sub) head.createDiv({ cls: "od2-sub", text: sub });
-    if (d.xp != null) head.createDiv({ cls: "od2-sub", text: `XP: ${d.xp}` });
+
+    // --- XP: valor + botão "+XP" (aplica o bônus de povo) + aviso de subida de nível ---
+    const xpAtual = num(d.xp);
+    const bonusXp = num(povoDef?.bonus_xp);
+    const xpLine = head.createDiv({ cls: "od2-sub od2-xp-line" });
+    xpLine.createSpan({ text: `XP: ${xpAtual}` });
+    const addXpBtn = xpLine.createEl("button", {
+      cls: "od2-mini",
+      text: "+XP",
+      attr: { title: bonusXp ? `Registrar XP ganho (o povo soma +${bonusXp}%)` : "Registrar XP ganho" },
+    });
+    addXpBtn.onclick = () =>
+      this.openEdit(
+        ctx,
+        el,
+        "Ganhar XP",
+        [{ key: "ganho", label: bonusXp ? `XP ganho (o povo soma +${bonusXp}%)` : "XP ganho", type: "number", value: "" }],
+        (data, v) => {
+          const ganho = num(v.ganho);
+          if (!ganho) return;
+          const somado = xpComBonusPovo(ganho, bonusXp);
+          data.xp = num(data.xp) + somado;
+          new Notice(
+            bonusXp
+              ? `OD2: +${somado} XP (${ganho} +${bonusXp}% do povo) → ${num(data.xp)}`
+              : `OD2: +${somado} XP → ${num(data.xp)}`,
+          );
+        },
+      );
+
+    // Aviso de subida de nível (manual): só quando há XP suficiente para o próximo nível.
+    const xpProx = xpDoNivel(classeDef?.xp, nivel + 1);
+    if (xpProx != null) {
+      if (xpAtual >= xpProx) {
+        const up = head.createDiv({ cls: "od2-sub od2-levelup" });
+        up.createSpan({ text: `✦ XP suficiente para o nível ${nivel + 1}! ` });
+        const upBtn = up.createEl("button", { cls: "od2-roll", text: `Subir para nível ${nivel + 1}` });
+        upBtn.onclick = () =>
+          this.rewriteFicha(ctx, el, (data) => {
+            data.nivel = num(data.nivel, 1) + 1;
+          }).then(() => new Notice(`OD2: nível ${nivel + 1}! Lembre de rolar os PV do novo nível.`));
+      } else {
+        head.createDiv({
+          cls: "od2-sub od2-xp-faltam",
+          text: `Faltam ${xpProx - xpAtual} XP para o nível ${nivel + 1}`,
+        });
+      }
+    }
+
     if (d.jogador) head.createDiv({ cls: "od2-sub", text: `Jogador: ${d.jogador}` });
     this.editBtn(
       head,

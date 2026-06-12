@@ -42,6 +42,13 @@ button.od2-mini {
 .od2-atk .od2-mini:not(:first-of-type) { margin-left: 0.3rem; }
 button.od2-mini:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 
+/* Linha de XP do cabeçalho: valor + botão "+XP" lado a lado. */
+.od2-xp-line { display: flex; align-items: center; gap: 0.4rem; }
+.od2-xp-line .od2-mini { margin-left: 0; }
+/* Aviso de subida de nível disponível e contador de XP restante. */
+.od2-levelup { display: flex; align-items: center; gap: 0.4rem; color: var(--text-accent); font-weight: 600; margin-top: 0.25rem; }
+.od2-xp-faltam { font-size: 0.85em; font-style: italic; }
+
 /* Botão ✎ de editar seção. No cabeçalho fica logo abaixo da identificação;
    nos cabeçalhos de seção (od2-sec-head) o margin-left:auto o joga pra direita. */
 .od2-head > button.od2-edit { margin-top: 0.4rem; margin-left: 0; }

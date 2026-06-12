@@ -18,6 +18,24 @@ const magoMagias: number[][] = [
   [4,3,3,2,2],[4,3,3,3,2],[5,4,3,3,2],[5,5,4,3,3],[5,5,4,3,3],
 ];
 
+// Limiares de XP por nível (1..10) do OD2 — Tabelas 3.1 a 3.4 (LB1). Índice = nível-1;
+// valor = XP mínimo para estar naquele nível. Cada classe-base tem uma coluna "XP" e uma
+// "XP Especial" (mais cara, usada pelas especializações). As tabelas do LB1 vão até o 10º
+// nível; do 11º em diante o OD2 trata como regra avançada do LB2.
+const xpLadrao = [0, 1000, 2000, 4000, 7000, 14000, 24000, 34000, 44000, 88000];
+const xpClerigo = [0, 1500, 3000, 5500, 8500, 17000, 27000, 37000, 47000, 94000];
+const xpGuerreiro = [0, 2000, 4000, 7000, 10000, 20000, 30000, 40000, 50000, 100000];
+const xpMago = [0, 2500, 5000, 8500, 11500, 23000, 33000, 43000, 53000, 106000];
+const xpMagoEspecial = [0, 3000, 6000, 10000, 13000, 26000, 36000, 46000, 56000, 112000];
+// A coluna "XP Especial" de cada base coincide com a coluna "XP" da base seguinte
+// (Ladrão → Clérigo → Guerreiro → Mago), e o Mago tem uma coluna especial própria.
+const XP_BASE: Record<string, number[]> = {
+  Guerreiro: xpGuerreiro, Clérigo: xpClerigo, Mago: xpMago, Ladrão: xpLadrao,
+};
+const XP_ESPECIAL: Record<string, number[]> = {
+  Guerreiro: xpMago, Clérigo: xpGuerreiro, Mago: xpMagoEspecial, Ladrão: xpClerigo,
+};
+
 // Classes-base do Old Dragon 2 (embutidas). Notas do vault sobrescrevem por nome.
 export const BASE_CLASSES: ClasseDef[] = [
   {
@@ -281,10 +299,18 @@ export const BASE_CLASSES: ClasseDef[] = [
   },
 ];
 
+// Preenche a tabela de XP de cada classe a partir da base: classe-base (nome === base)
+// usa a coluna "XP" normal; especializações (nome !== base) usam a coluna "XP Especial".
+// Notas do vault que já tragam `xp` próprio são preservadas.
+for (const c of BASE_CLASSES) {
+  if (c.xp || !c.base) continue;
+  c.xp = c.nome === c.base ? XP_BASE[c.base] : XP_ESPECIAL[c.base];
+}
+
 // Raças-base do Old Dragon 2 (embutidas).
 export const BASE_POVOS: PovoDef[] = [
   {
-    nome: "Humano", deslocamento: 9, infravisao: "não possui", alinhamento: "qualquer",
+    nome: "Humano", deslocamento: 9, infravisao: "não possui", alinhamento: "qualquer", bonus_xp: 10,
     descricao: "Seres versáteis e adaptáveis, aprendem rápido e prosperam em qualquer ambiente. Sua diversidade permite ajustar-se a praticamente qualquer situação.",
     habilidades: [
       { nome: "Aprendizado", desc: "+10% em todo XP ganho" },
@@ -326,7 +352,7 @@ export const BASE_POVOS: PovoDef[] = [
     ],
   },
   {
-    nome: "Meio-Elfo", deslocamento: 9, infravisao: "9m", alinhamento: "tende a Caótico",
+    nome: "Meio-Elfo", deslocamento: 9, infravisao: "9m", alinhamento: "tende a Caótico", bonus_xp: 5,
     descricao: "Misturam traços de humanos e elfos: herdam o aprendizado acelerado e a graciosidade e resistência élficas. Sua natureza plural confere versatilidade e imunidades especiais.",
     habilidades: [
       { nome: "Aprendizado", desc: "+5% em todo XP ganho" },

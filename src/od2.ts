@@ -131,6 +131,8 @@ export interface ClasseDef {
     desc?: string;
     melhorias?: Array<{ nivel?: number; desc?: string }>;
   }>;
+  // Limiares de XP por nível (índice = nível-1; valor = XP mínimo para o nível).
+  xp?: number[];
 }
 export interface PovoDef {
   nome: string;
@@ -140,7 +142,28 @@ export interface PovoDef {
   alinhamento?: string;
   habilidades?: Array<{ nome?: string; desc?: string }>;
   bonus?: Bonus;
+  // Modificador percentual de XP recebido (ex.: Humano = 10 → +10%).
+  bonus_xp?: number;
 }
+
+// XP mínimo para atingir `nivelAlvo`, da tabela da classe. undefined fora da tabela
+// (ex.: nível acima do 10º, que o LB1 não cobre).
+export const xpDoNivel = (xpTable: number[] | undefined, nivelAlvo: number): number | undefined =>
+  Array.isArray(xpTable) && nivelAlvo >= 1 && nivelAlvo <= xpTable.length
+    ? xpTable[nivelAlvo - 1]
+    : undefined;
+
+// Maior nível alcançável com `xp` segundo a tabela (limitado ao tamanho dela). 1 sem tabela.
+export const nivelPorXp = (xpTable: number[] | undefined, xp: number): number => {
+  if (!Array.isArray(xpTable) || !xpTable.length) return 1;
+  let n = 1;
+  for (let i = 0; i < xpTable.length; i++) if (num(xp) >= xpTable[i]) n = i + 1;
+  return n;
+};
+
+// Aplica o modificador de XP do povo a um ganho bruto, arredondando (ex.: 230 +10% = 253).
+export const xpComBonusPovo = (ganho: number, bonusPct: number | undefined): number =>
+  Math.round(num(ganho) * (1 + num(bonusPct) / 100));
 
 // --- Equipamento (Cap. 5 do SRD) ---
 export interface ArmaDef {
