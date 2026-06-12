@@ -89,16 +89,56 @@ function uuidDoODO(input: string): string | null {
   return m ? m[0] : null;
 }
 
+// Forma parcial do JSON de personagem do Old Dragon Online (ODO) — apenas os campos lidos.
+interface OdoItem {
+  equipped?: boolean;
+  concept?: string;
+  bonus_ca?: number;
+  name?: string;
+  shoot_range?: unknown;
+  throw_range?: unknown;
+  bonus_damage?: number;
+  damage?: unknown;
+  weight_in_load?: number;
+  increases_load_by?: number;
+}
+interface OdoChar {
+  name?: string;
+  forca?: number;
+  destreza?: number;
+  constituicao?: number;
+  inteligencia?: number;
+  sabedoria?: number;
+  carisma?: number;
+  ac?: number;
+  bac?: number;
+  bad?: number;
+  jpd?: number;
+  jpc?: number;
+  jps?: number;
+  level?: number;
+  max_hp?: number;
+  health_points?: number;
+  experience_points?: number;
+  money_gp?: number;
+  picture?: string;
+  alignment?: string;
+  inventory_items?: OdoItem[];
+  owner?: { handler?: string };
+  character_race?: { name?: string };
+  character_class?: { name?: string };
+}
+
 // Mapeia o JSON de um personagem do Old Dragon Online (ODO) para o formato da ficha.
 // CA/BA/JP do ODO são valores FINAIS; como o plugin re-soma o modificador, gravamos
 // como override "descontando o mod" para a ficha exibir exatamente os números do ODO.
-function odoParaFicha(j: Record<string, any>): FichaData {
+function odoParaFicha(j: OdoChar): FichaData {
   const modFor = mod(j.forca);
   const modDes = mod(j.destreza);
   const modCon = mod(j.constituicao);
   const modSab = mod(j.sabedoria);
 
-  const itens: Array<Record<string, any>> = Array.isArray(j.inventory_items) ? j.inventory_items : [];
+  const itens: OdoItem[] = j.inventory_items ?? [];
   const equipados = itens.filter((it) => it.equipped);
   const somaCa = (concept: string) =>
     equipados.filter((it) => it.concept === concept).reduce((a, it) => a + num(it.bonus_ca), 0);
@@ -165,7 +205,7 @@ function odoParaFicha(j: Record<string, any>): FichaData {
     if (v === false) continue;
     ficha[k] = v;
   }
-  return ficha as FichaData;
+  return ficha;
 }
 
 // Renderiza marcação mínima (<b>/<i>) como nós DOM seguros, sem innerHTML
@@ -199,7 +239,7 @@ class OD2FormModal extends Modal {
     app: App,
     private titulo: string,
     private campos: CampoForm[],
-    private onSubmit: (vals: Record<string, string>) => void,
+    private onSubmit: (vals: Record<string, string>) => void | Promise<void>,
   ) {
     super(app);
   }
@@ -208,7 +248,7 @@ class OD2FormModal extends Modal {
     contentEl.createEl("h3", { text: this.titulo });
     const submit = () => {
       this.close();
-      this.onSubmit(this.valores);
+      void this.onSubmit(this.valores);
     };
     for (const f of this.campos) {
       this.valores[f.key] = f.value != null ? String(f.value) : "";
@@ -330,6 +370,17 @@ function rolarPVdeDV(dv: string | number): { total: number; rolls: number[] } {
   return { total: Math.max(1, total), rolls };
 }
 
+// Tipagem mínima de APIs de terceiros não cobertas pela API pública do Obsidian.
+interface AppWithPlugins extends App {
+  plugins: { getPlugin(id: string): unknown };
+}
+interface InitiativeTrackerPlugin {
+  api?: { addCreatures(creatures: Record<string, unknown>[]): void };
+}
+interface DiceRollerView {
+  addResult?: (entry: Record<string, unknown>) => void;
+}
+
 export default class OD2Plugin extends Plugin {
   settings: OD2Settings = DEFAULT_SETTINGS;
   private classes = new Map<string, ClasseDef>();
@@ -420,13 +471,13 @@ export default class OD2Plugin extends Plugin {
     for (const c of BASE_CLASSES) this.classes.set(norm(c.nome), c);
     for (const p of BASE_POVOS) this.povos.set(norm(p.nome), p);
     for (const f of this.app.vault.getMarkdownFiles()) {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter as Record<string, unknown> | undefined;
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
       if (!fm) continue;
       if (fm["od2-classe"]) {
-        this.classes.set(norm(fm["od2-classe"]), { nome: String(fm["od2-classe"]), ...fm } as ClasseDef);
+        this.classes.set(norm(fm["od2-classe"]), { ...fm, nome: String(fm["od2-classe"]) });
       }
       if (fm["od2-povo"]) {
-        this.povos.set(norm(fm["od2-povo"]), { nome: String(fm["od2-povo"]), ...fm } as PovoDef);
+        this.povos.set(norm(fm["od2-povo"]), { ...fm, nome: String(fm["od2-povo"]) });
       }
     }
   }
@@ -585,7 +636,6 @@ export default class OD2Plugin extends Plugin {
     sel.onchange = () => {
       ajuste = Number(sel.value) || 0;
     };
-    const ajusteTxt = () => (ajuste ? ` <i>(ajuste ${sinal(ajuste)})</i>` : "");
 
     // --- Atributos ---
     const attrSec = root.createDiv({ cls: "od2-section od2-attrs-sec" });
@@ -836,7 +886,7 @@ export default class OD2Plugin extends Plugin {
     if (magiasNivel && magiasNivel.some((n) => n > 0)) {
       const prep: Record<string, string[]> =
         d.magias_preparadas && typeof d.magias_preparadas === "object"
-          ? (d.magias_preparadas as Record<string, string[]>)
+          ? d.magias_preparadas
           : {};
       const magicAttr =
         classeDef?.base === "Clérigo"
@@ -876,7 +926,7 @@ export default class OD2Plugin extends Plugin {
           inp.value = salvas[j] ?? "";
           inp.dataset.circ = String(circ);
           inp.dataset.idx = String(j);
-          inp.addEventListener("change", () => this.saveMagias(ctx, el));
+          inp.addEventListener("change", () => void this.saveMagias(ctx, el));
         }
       });
     }
@@ -963,7 +1013,7 @@ export default class OD2Plugin extends Plugin {
       const distribuir = 2 + attrMod + 2 * niveisGanho; // pontos acima do piso (2 por talento)
       const pontos: Record<string, number> =
         d.talentos_pontos && typeof d.talentos_pontos === "object"
-          ? (d.talentos_pontos as Record<string, number>)
+          ? d.talentos_pontos
           : {};
       const sec = colL.createDiv({ cls: "od2-section od2-talentos" });
       sec.createEl("h3", { text: "Talentos" });
@@ -979,7 +1029,7 @@ export default class OD2Plugin extends Plugin {
         });
         inp.value = String(val);
         inp.dataset.talento = t;
-        inp.addEventListener("change", () => this.saveTalentos(ctx, el));
+        inp.addEventListener("change", () => void this.saveTalentos(ctx, el));
         const btn = row.createEl("button", { cls: "od2-roll", text: "testar" });
         btn.onclick = () => this.rolarRollUnder(6, Number(inp.value) || 2, t);
       }
@@ -1106,14 +1156,14 @@ export default class OD2Plugin extends Plugin {
     notasArea.value = typeof d.notas === "string" ? d.notas : "";
     // Salva ao sair do campo (igual aos espaços de magia/talentos).
     notasArea.addEventListener("change", () =>
-      this.rewriteFicha(ctx, el, (data) => setStrField(data, "notas", notasArea.value)),
+      void this.rewriteFicha(ctx, el, (data) => setStrField(data, "notas", notasArea.value)),
     );
 
     // Balanceia as duas colunas por altura: cada seção é movida inteira (nunca
     // fragmentada), então não há vazamento de botões entre colunas. As colunas
     // já têm 50% de largura (flex), então a medição reflete a largura final.
     // Em telas estreitas o CSS empilha as colunas; aí não movemos nada.
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       if (cols.offsetWidth < 560) return; // empilhado (mobile) → coluna única
       const secoes = Array.from(colL.children) as HTMLElement[];
       const alturas = secoes.map((s) => s.offsetHeight);
@@ -1284,8 +1334,8 @@ export default class OD2Plugin extends Plugin {
     const url = `https://olddragon.com.br/personagens/${uuid}.json`;
     try {
       const resp = await requestUrl({ url });
-      const j = resp.json as Record<string, any>;
-      if (!j || !j.name) {
+      const j = resp.json as OdoChar;
+      if (!j.name) {
         new Notice("OD2: resposta inesperada do ODO — o personagem é público?");
         return null;
       }
@@ -1522,9 +1572,13 @@ export default class OD2Plugin extends Plugin {
   // --- Integrações com outros plugins (feature-detection + fallback) ---
 
   // Initiative Tracker disponível com a API de adicionar criaturas?
+  private getPlugin(id: string): unknown {
+    return (this.app as AppWithPlugins).plugins.getPlugin(id);
+  }
+
   private temInitiativeTracker(): boolean {
-    const it = (this.app as any).plugins?.getPlugin?.("initiative-tracker");
-    return !!(it && it.api && typeof it.api.addCreatures === "function");
+    const it = this.getPlugin("initiative-tracker") as InitiativeTrackerPlugin | null;
+    return typeof it?.api?.addCreatures === "function";
   }
 
   // Adiciona uma criatura/PJ ao Initiative Tracker (nome, PV, CA, modificador de iniciativa).
@@ -1538,7 +1592,7 @@ export default class OD2Plugin extends Plugin {
     modifier: number,
     initiativeFixa?: number,
   ) {
-    const it = (this.app as any).plugins?.getPlugin?.("initiative-tracker");
+    const it = this.getPlugin("initiative-tracker") as InitiativeTrackerPlugin | null;
     if (!it?.api?.addCreatures) {
       new Notice("Initiative Tracker não está disponível.");
       return;
@@ -1570,10 +1624,10 @@ export default class OD2Plugin extends Plugin {
   // Injeta uma entrada no painel "Results" do Dice Roller (Dice Tray), se ele estiver aberto.
   // `result` é o texto principal (negrito); `formula` aparece pequeno e é o que o "Roll Again" rerola.
   private adicionarResultadoNoTray(formula: string, result: string): boolean {
-    const leaves = (this.app as any).workspace?.getLeavesOfType?.("DICE_ROLLER_VIEW") ?? [];
+    const leaves = this.app.workspace.getLeavesOfType("DICE_ROLLER_VIEW");
     for (const leaf of leaves) {
-      const view: any = leaf?.view;
-      if (view && typeof view.addResult === "function") {
+      const view = leaf.view as DiceRollerView;
+      if (typeof view.addResult === "function") {
         try {
           view.addResult({
             result,
@@ -1654,7 +1708,8 @@ export default class OD2Plugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const data = (await this.loadData()) as Partial<OD2Settings> | null;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
   }
   async saveSettings() {
     await this.saveData(this.settings);
