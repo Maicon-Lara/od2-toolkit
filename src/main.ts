@@ -230,19 +230,34 @@ interface CampoForm {
   type?: "text" | "number";
   value?: string | number;
   placeholder?: string;
+  // Lista de sugestões para autocomplete (vira um <datalist>).
+  options?: string[];
 }
 
 // Modal genérico de formulário: coleta os campos e devolve os valores no onSubmit.
 class OD2FormModal extends Modal {
   private valores: Record<string, string> = {};
+  private inputs: Record<string, HTMLInputElement> = {};
   constructor(
     app: App,
     private titulo: string,
     private campos: CampoForm[],
     private onSubmit: (vals: Record<string, string>) => void | Promise<void>,
+    // Chamado quando um campo muda; pode preencher outros campos via `set`
+    // (ex.: escolher uma arma preenche a carga automaticamente).
+    private onChange?: (
+      key: string,
+      value: string,
+      set: (k: string, v: string) => void,
+    ) => void,
   ) {
     super(app);
   }
+  // Atualiza um campo programaticamente (valor interno + input visível).
+  private set = (k: string, v: string) => {
+    this.valores[k] = v;
+    if (this.inputs[k]) this.inputs[k].value = v;
+  };
   onOpen() {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: this.titulo });
@@ -255,8 +270,20 @@ class OD2FormModal extends Modal {
       new Setting(contentEl).setName(f.label).addText((t) => {
         if (f.type === "number") t.inputEl.type = "number";
         if (f.placeholder) t.setPlaceholder(f.placeholder);
+        this.inputs[f.key] = t.inputEl;
+        // Autocomplete via <datalist> nativo.
+        if (f.options?.length) {
+          const listId = `od2-form-${f.key}-${Math.random().toString(36).slice(2, 8)}`;
+          const dl = contentEl.createEl("datalist");
+          dl.id = listId;
+          for (const opt of f.options) dl.createEl("option", { attr: { value: opt } });
+          t.inputEl.setAttribute("list", listId);
+        }
         t.setValue(this.valores[f.key]);
-        t.onChange((v) => (this.valores[f.key] = v));
+        t.onChange((v) => {
+          this.valores[f.key] = v;
+          this.onChange?.(f.key, v, this.set);
+        });
         t.inputEl.addEventListener("keydown", (e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -352,6 +379,64 @@ const SKELETON_MONSTRO = [
   "",
 ].join("\n");
 
+// Template de CLASSE homebrew (frontmatter). Cole no topo de uma NOTA NOVA; o plugin
+// indexa qualquer nota com `od2-classe` e a torna usável em fichas (sobrescreve o SRD).
+const SKELETON_CLASSE = [
+  "---",
+  "od2-classe: Minha Classe",
+  "base: Guerreiro            # opcional: herda perfil de Guerreiro/Clérigo/Mago/Ladrão",
+  "dado_vida: 10              # 4, 6, 8, 10...",
+  "ba: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]            # bônus de ataque por nível",
+  "jp: [5, 5, 6, 6, 8, 8, 10, 10, 11, 11]         # jogada de proteção base por nível",
+  "xp: [0, 2000, 4000, 7000, 10000, 20000, 30000, 40000, 50000, 100000]  # XP p/ cada nível",
+  "# magias:                  # só p/ conjuradores — slots por círculo, por nível",
+  "#   - [1, 0, 0]",
+  "#   - [2, 0, 0]",
+  "poderes:",
+  "  - nivel: 1",
+  "    nome: Poder de Exemplo",
+  "    desc: O que o poder faz.",
+  "    melhorias:",
+  "      - nivel: 6",
+  "        desc: Como evolui no 6º nível.",
+  "# herda:                   # p/ especializações: poderes da base que mantém",
+  "#   - nome: Aparar",
+  "#   - nome: Maestria em Arma",
+  "#     sem_evolucao: true",
+  "# talentos: [Furtividade, Escalar]    # perícias estilo Ladrão",
+  "# talentos_atributo: destreza",
+  "---",
+  "",
+  "# Minha Classe",
+  "",
+  "Lore e descrição. Use em uma ficha com `classe: Minha Classe`.",
+  "",
+].join("\n");
+
+// Template de POVO/raça homebrew (frontmatter). Mesma ideia: cole no topo de uma nota nova.
+const SKELETON_POVO = [
+  "---",
+  "od2-povo: Meu Povo",
+  "deslocamento: 9",
+  'infravisao: "não possui"   # ou "18m"',
+  "alinhamento: qualquer",
+  "bonus_xp: 0                # modificador percentual de XP (ex.: 10 = +10%)",
+  "bonus:                     # bônus fixos de raça",
+  "  jpd: 0",
+  "  jpc: 0",
+  "  jps: 0",
+  "habilidades:",
+  "  - nome: Habilidade Racial",
+  "    desc: O que ela faz.",
+  "descricao: Lore do povo.",
+  "---",
+  "",
+  "# Meu Povo",
+  "",
+  "Lore e descrição. Use em uma ficha com `povo: Meu Povo`.",
+  "",
+].join("\n");
+
 // Rola PV a partir dos Dados de Vida (DV em d8; ½ = 1d4).
 function rolarPVdeDV(dv: string | number): { total: number; rolls: number[] } {
   const s = String(dv).trim();
@@ -424,6 +509,18 @@ export default class OD2Plugin extends Plugin {
       id: "inserir-monstro-od2",
       name: "Inserir statblock de monstro (OD2)",
       editorCallback: (editor) => editor.replaceSelection(SKELETON_MONSTRO),
+    });
+
+    this.addCommand({
+      id: "inserir-classe-homebrew-od2",
+      name: "Inserir definição de classe homebrew (OD2)",
+      editorCallback: (editor) => editor.replaceSelection(SKELETON_CLASSE),
+    });
+
+    this.addCommand({
+      id: "inserir-povo-homebrew-od2",
+      name: "Inserir definição de povo homebrew (OD2)",
+      editorCallback: (editor) => editor.replaceSelection(SKELETON_POVO),
     });
 
     this.addCommand({
@@ -1057,7 +1154,7 @@ export default class OD2Plugin extends Plugin {
           this.app,
           "Novo item",
           [
-            { key: "nome", label: "Item", placeholder: "Corda (15 m)" },
+            { key: "nome", label: "Item", placeholder: "Corda (15 m)", options: this.nomesDeEquipamento() },
             { key: "carga", label: "Carga", type: "number", value: 1 },
           ],
           (v) =>
@@ -1066,6 +1163,13 @@ export default class OD2Plugin extends Plugin {
               arr.push({ nome: v.nome || "Item", carga: num(v.carga) });
               data.equipamento = arr;
             }),
+          (key, value, set) => {
+            // Escolheu uma arma/armadura do SRD: preenche a carga automaticamente.
+            if (key === "nome") {
+              const carga = this.cargaDoItem(value);
+              if (carga != null) set("carga", String(carga));
+            }
+          },
         ).open();
 
       if (equip.length) {
@@ -1079,7 +1183,7 @@ export default class OD2Plugin extends Plugin {
               this.app,
               "Editar item",
               [
-                { key: "nome", label: "Item", value: it?.nome ?? "" },
+                { key: "nome", label: "Item", value: it?.nome ?? "", options: this.nomesDeEquipamento() },
                 { key: "carga", label: "Carga", type: "number", value: num(it?.carga) },
               ],
               (v) =>
@@ -1088,6 +1192,12 @@ export default class OD2Plugin extends Plugin {
                     data.equipamento[i] = { nome: v.nome || "Item", carga: num(v.carga) };
                   }
                 }),
+              (key, value, set) => {
+                if (key === "nome") {
+                  const carga = this.cargaDoItem(value);
+                  if (carga != null) set("carga", String(carga));
+                }
+              },
             ).open();
           const del = row.createEl("button", { cls: "od2-mini od2-del", text: "✕", attr: { title: "Remover" } });
           del.onclick = () =>
@@ -1213,6 +1323,24 @@ export default class OD2Plugin extends Plugin {
       nomes = [...arc, ...div];
     }
     return Array.from(new Set(nomes)).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }
+
+  // Nomes de equipamento do SRD (armas, armaduras e itens gerais) para autocomplete.
+  private nomesDeEquipamento(): string[] {
+    const nomes = [...ARMAS, ...ARMADURAS, ...ITENS_GERAIS].map((e) => e.nome);
+    return Array.from(new Set(nomes)).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }
+
+  // Carga (espaços) de um item do SRD pelo nome. Armas/armaduras trazem `carga`
+  // ("#" = desprezível → 0); itens gerais só têm peso em kg, então ficam sem carga
+  // automática (retorna null e o jogador ajusta). null = sem dado para autopreencher.
+  private cargaDoItem(nome: string): number | null {
+    const alvo = norm(nome);
+    const item = [...ARMAS, ...ARMADURAS].find((e) => norm(e.nome) === alvo);
+    if (!item?.carga) return null;
+    if (item.carga.trim() === "#") return 0;
+    const n = parseInt(item.carga, 10);
+    return Number.isFinite(n) ? n : null;
   }
 
   // Coleta os nomes digitados nas magias e grava no bloco.
